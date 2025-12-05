@@ -2228,19 +2228,19 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\devis\\.nuget\\packages\\": {}
+    "C:\\Users\\MY HOME\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\devis\\Pre-Clear\\backend\\backend.csproj",
+      "projectUniqueName": "C:\\Users\\MY HOME\\Downloads\\Pre-Clear\\backend\\backend.csproj",
       "projectName": "backend",
-      "projectPath": "C:\\Users\\devis\\Pre-Clear\\backend\\backend.csproj",
-      "packagesPath": "C:\\Users\\devis\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\devis\\Pre-Clear\\backend\\obj\\",
+      "projectPath": "C:\\Users\\MY HOME\\Downloads\\Pre-Clear\\backend\\backend.csproj",
+      "packagesPath": "C:\\Users\\MY HOME\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\MY HOME\\Downloads\\Pre-Clear\\backend\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "C:\\Users\\devis\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        "C:\\Users\\MY HOME\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net8.0"
@@ -2263,7 +2263,8 @@
         "enableAudit": "true",
         "auditLevel": "low",
         "auditMode": "direct"
-      }
+      },
+      "SdkAnalysisLevel": "9.0.300"
     },
     "frameworks": {
       "net8.0": {
@@ -2297,6 +2298,24 @@
         ],
         "assetTargetFallback": true,
         "warn": true,
+        "downloadDependencies": [
+          {
+            "name": "Microsoft.AspNetCore.App.Ref",
+            "version": "[8.0.21, 8.0.21]"
+          },
+          {
+            "name": "Microsoft.NETCore.App.Host.win-x64",
+            "version": "[8.0.21, 8.0.21]"
+          },
+          {
+            "name": "Microsoft.NETCore.App.Ref",
+            "version": "[8.0.21, 8.0.21]"
+          },
+          {
+            "name": "Microsoft.WindowsDesktop.App.Ref",
+            "version": "[8.0.21, 8.0.21]"
+          }
+        ],
         "frameworkReferences": {
           "Microsoft.AspNetCore.App": {
             "privateAssets": "none"
@@ -2305,7 +2324,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.416/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.306/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

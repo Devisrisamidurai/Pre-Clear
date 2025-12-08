@@ -21,6 +21,7 @@ logs
 .env
 .env.local
 .env.*.local
+*.md
 
 # Editor / System
 .DS_Store
@@ -42,3 +43,5 @@ coverage/
 
 # TypeScript
 *.tsbuildinfo
+
+/backend/obj/

@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { MapPin, Package, Truck, Clock, DollarSign, Info } from 'lucide-react';
+import { MapPin, Package, Truck, Clock, DollarSign, Info, AlertCircle, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { shipmentsStore } from '../../store/shipmentsStore';
 
 const carriers = [
+  { id: 'ups', name: 'UPS Worldwide', logo: '📮', basePrice: 2400, estimatedDays: '4-7' },
   { id: 'dhl', name: 'DHL Express', logo: '📦', basePrice: 2500, estimatedDays: '3-5' },
   { id: 'fedex', name: 'FedEx International', logo: '🚚', basePrice: 2300, estimatedDays: '4-6' },
-  { id: 'ups', name: 'UPS Worldwide', logo: '📮', basePrice: 2400, estimatedDays: '4-7' },
   { id: 'bluedart', name: 'Blue Dart', logo: '✈️', basePrice: 1800, estimatedDays: '5-8' },
 ];
 
@@ -14,37 +15,25 @@ const deliveryOptions = [
   { id: 'economy', name: 'Economy Delivery', multiplier: 0.8, days: '8-12' },
 ];
 
-export function ShipmentBooking({ tokenData, onSubmit }) {
+export function ShipmentBooking({ shipment, onNavigate }) {
   const [formData, setFormData] = useState({
-    pickupAddress: '',
-    pickupCity: '',
-    pickupPostal: '',
-    pickupCountry: 'CN',
-    destAddress: '',
-    destCity: '',
-    destPostal: '',
-    destCountry: 'IN',
-    length: '',
-    width: '',
-    height: '',
-    weight: '',
-    carrier: '',
+    carrier: 'ups',
     deliverySpeed: 'standard'
   });
 
   const [pricing, setPricing] = useState({
-    basePrice: 0,
+    basePrice: 2400,
     deliveryCharge: 0,
     customsClearance: 450,
     insurance: 200,
     subtotal: 0,
     gst: 0,
     total: 0,
-    totalINR: 0
   });
 
-  const INR_RATE = 83.20; // 1 USD = 83.20 INR
+  const INR_RATE = 83.20;
 
+  // Calculate pricing when carrier or delivery speed changes
   useEffect(() => {
     if (formData.carrier && formData.deliverySpeed) {
       const carrier = carriers.find(c => c.id === formData.carrier);
@@ -53,10 +42,9 @@ export function ShipmentBooking({ tokenData, onSubmit }) {
       if (carrier && delivery) {
         const basePrice = carrier.basePrice;
         const deliveryCharge = basePrice * delivery.multiplier;
-        const subtotal = basePrice + deliveryCharge + pricing.customsClearance + pricing.insurance;
-        const gst = subtotal * 0.18; // 18% GST
+        const subtotal = basePrice + deliveryCharge + pricing.customsClearance + (shipment.insuranceRequired ? pricing.insurance : 0);
+        const gst = subtotal * 0.18;
         const total = subtotal + gst;
-        const totalINR = total * INR_RATE;
 
         setPricing({
           ...pricing,
@@ -64,8 +52,7 @@ export function ShipmentBooking({ tokenData, onSubmit }) {
           deliveryCharge,
           subtotal,
           gst,
-          total,
-          totalINR
+          total
         });
       }
     }
@@ -76,378 +63,438 @@ export function ShipmentBooking({ tokenData, onSubmit }) {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSubmit({
-      ...formData,
-      pricing,
-      tokenId: tokenData?.tokenId
-    });
+  // Check COD eligibility
+  const checkCODEligibility = () => {
+    if (!shipment) return { eligible: false, reason: 'Shipment not found' };
+    
+    const isCODPayment = shipment.paymentTiming === 'COD';
+    const isRoadOrCourier = ['Road', 'Courier'].includes(shipment.mode);
+    const isDomestic = shipment.shipmentType === 'Domestic';
+    const noDangerousGoods = !shipment.dangerousGoods;
+
+    if (!isCODPayment) {
+      return { eligible: false, reason: 'Payment timing must be COD' };
+    }
+    if (!isRoadOrCourier) {
+      return { eligible: false, reason: 'COD only available for Road/Courier modes' };
+    }
+    if (!isDomestic) {
+      return { eligible: false, reason: 'COD only available for domestic shipments' };
+    }
+    if (!noDangerousGoods) {
+      return { eligible: false, reason: 'Dangerous goods not allowed with COD' };
+    }
+
+    return { eligible: true, reason: 'Eligible for COD' };
   };
 
-  const isFormValid = formData.pickupAddress && 
-    formData.destAddress && 
-    formData.length && 
-    formData.weight && 
-    formData.carrier;
+  // Check booking eligibility
+  const isBookingEligible = () => {
+    return (
+      shipment &&
+      shipment.aiComplianceStatus === 'cleared' &&
+      shipment.brokerReviewStatus === 'approved' &&
+      shipment.status === 'token-generated' &&
+      shipment.token !== null &&
+      shipment.bookingStatus !== 'booked'
+    );
+  };
+
+  // Check if booking button should be disabled
+  const isBookingDisabled = () => {
+    return (
+      shipment.bookingStatus === 'booked' ||
+      (shipment.paymentStatus === 'paid' && shipment.bookingStatus === 'booked') ||
+      !shipment.token
+    );
+  };
+
+  const handleBookingClick = () => {
+    if (!isBookingEligible()) return;
+
+    const codEligibility = checkCODEligibility();
+    
+    // Build payment context
+    const paymentContext = {
+      mode: shipment.mode,
+      shipmentType: shipment.shipmentType,
+      billTo: shipment.billTo,
+      paymentTiming: shipment.paymentTiming,
+      paymentStatus: shipment.paymentStatus,
+      serviceLevel: shipment.serviceLevel,
+      value: shipment.value,
+      codAllowed: codEligibility.eligible,
+      selectedCarrier: formData.carrier,
+      selectedDeliverySpeed: formData.deliverySpeed,
+      pricing
+    };
+
+    // Navigate based on payment scenario
+    if (shipment.billTo === 'Consignee' && shipment.paymentTiming !== 'COD') {
+      onNavigate('request-payment', { ...shipment, paymentContext });
+    } else {
+      onNavigate('payment', { ...shipment, paymentContext });
+    }
+  };
+
+  if (!shipment) {
+    return (
+      <div className="p-8 bg-red-50 rounded-xl border border-red-200">
+        <p className="text-red-800">Shipment not found</p>
+      </div>
+    );
+  }
+
+  const codEligibility = checkCODEligibility();
+  const bookingEligible = isBookingEligible();
 
   return (
     <div>
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-slate-900 mb-2">Shipment Booking</h1>
-        <p className="text-slate-600">Book your shipment using Pre-Clear Token: {tokenData?.tokenId}</p>
+        <p className="text-slate-600">Book your pre-cleared shipment with token: {shipment.token}</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Booking Form */}
-        <div className="lg:col-span-2">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Pickup Address */}
-            <div className="bg-white rounded-xl p-6 border border-slate-200">
-              <div className="flex items-center gap-2 mb-4">
-                <MapPin className="w-5 h-5 text-blue-600" />
-                <h2 className="text-slate-900">Pickup Address (Expanded, Detailed)</h2>
-              </div>
-
+        {/* Main Booking Section */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Shipment Summary Card */}
+          <div className="bg-white rounded-xl p-6 border border-slate-200">
+            <h2 className="text-slate-900 mb-6 text-lg font-semibold">Shipment Details Summary</h2>
+            
+            {/* Grid Layout for Details */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Basic Info */}
               <div className="space-y-4">
                 <div>
-                  <label className="block text-slate-700 mb-2">Full Pickup Address *</label>
-                  <input
-                    type="text"
-                    name="pickupAddress"
-                    value={formData.pickupAddress}
-                    onChange={handleChange}
-                    placeholder="Building No., Street Name, Area"
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
+                  <label className="text-slate-600 text-sm">Shipment ID</label>
+                  <p className="text-slate-900 font-mono">{shipment.id}</p>
                 </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-slate-700 mb-2">City *</label>
-                    <input
-                      type="text"
-                      name="pickupCity"
-                      value={formData.pickupCity}
-                      onChange={handleChange}
-                      placeholder="Shenzhen"
-                      className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-700 mb-2">Postal Code *</label>
-                    <input
-                      type="text"
-                      name="pickupPostal"
-                      value={formData.pickupPostal}
-                      onChange={handleChange}
-                      placeholder="518000"
-                      className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    />
-                  </div>
-                </div>
-
                 <div>
-                  <label className="block text-slate-700 mb-2">Country</label>
-                  <input
-                    type="text"
-                    value="🇨🇳 China"
-                    disabled
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg bg-slate-50 text-slate-600"
-                  />
+                  <label className="text-slate-600 text-sm">Title</label>
+                  <p className="text-slate-900">{shipment.title}</p>
+                </div>
+                <div>
+                  <label className="text-slate-600 text-sm">Reference ID</label>
+                  <p className="text-slate-900 font-mono">{shipment.referenceId}</p>
                 </div>
               </div>
-            </div>
 
-            {/* Destination Address */}
-            <div className="bg-white rounded-xl p-6 border border-slate-200">
-              <div className="flex items-center gap-2 mb-4">
-                <MapPin className="w-5 h-5 text-green-600" />
-                <h2 className="text-slate-900">Destination Address (Expanded, Detailed)</h2>
-              </div>
-
+              {/* Mode & Type */}
               <div className="space-y-4">
                 <div>
-                  <label className="block text-slate-700 mb-2">Full Delivery Address *</label>
-                  <input
-                    type="text"
-                    name="destAddress"
-                    value={formData.destAddress}
-                    onChange={handleChange}
-                    placeholder="Flat/House No., Street Name, Locality"
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
+                  <label className="text-slate-600 text-sm">Mode</label>
+                  <p className="text-slate-900 font-semibold">{shipment.mode}</p>
                 </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-slate-700 mb-2">City *</label>
-                    <input
-                      type="text"
-                      name="destCity"
-                      value={formData.destCity}
-                      onChange={handleChange}
-                      placeholder="Mumbai"
-                      className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-700 mb-2">Postal Code *</label>
-                    <input
-                      type="text"
-                      name="destPostal"
-                      value={formData.destPostal}
-                      onChange={handleChange}
-                      placeholder="400001"
-                      className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    />
-                  </div>
-                </div>
-
                 <div>
-                  <label className="block text-slate-700 mb-2">Country</label>
-                  <input
-                    type="text"
-                    value="🇮🇳 India"
-                    disabled
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg bg-slate-50 text-slate-600"
-                  />
+                  <label className="text-slate-600 text-sm">Shipment Type</label>
+                  <p className="text-slate-900">{shipment.shipmentType}</p>
+                </div>
+                <div>
+                  <label className="text-slate-600 text-sm">Service Level</label>
+                  <p className="text-slate-900">{shipment.serviceLevel}</p>
+                </div>
+              </div>
+
+              {/* Billing & Payment */}
+              <div className="space-y-4">
+                <div>
+                  <label className="text-slate-600 text-sm">Incoterm</label>
+                  <p className="text-slate-900">{shipment.incoterm}</p>
+                </div>
+                <div>
+                  <label className="text-slate-600 text-sm">Bill To</label>
+                  <p className="text-slate-900">{shipment.billTo}</p>
+                </div>
+                <div>
+                  <label className="text-slate-600 text-sm">Payment Timing</label>
+                  <p className="text-slate-900">{shipment.paymentTiming}</p>
+                </div>
+              </div>
+
+              {/* Value & Weight */}
+              <div className="space-y-4">
+                <div>
+                  <label className="text-slate-600 text-sm">Declared Value</label>
+                  <p className="text-slate-900 text-lg font-semibold">{shipment.currency} {shipment.declaredValue.toLocaleString()}</p>
+                </div>
+                <div>
+                  <label className="text-slate-600 text-sm">Total Weight</label>
+                  <p className="text-slate-900">{shipment.totalWeight} kg</p>
+                </div>
+                <div>
+                  <label className="text-slate-600 text-sm">Estimated Duty & Tax</label>
+                  <p className="text-slate-900">{shipment.currency} {shipment.estimatedDutyTax.toLocaleString()}</p>
                 </div>
               </div>
             </div>
 
-            {/* Package Dimensions */}
-            <div className="bg-white rounded-xl p-6 border border-slate-200">
-              <div className="flex items-center gap-2 mb-4">
-                <Package className="w-5 h-5 text-purple-600" />
-                <h2 className="text-slate-900">Package Dimensions</h2>
+            {/* Compliance & Risk Section */}
+            <div className="mt-6 pt-6 border-t border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Risk & Compliance */}
+              <div className="space-y-4">
+                <div>
+                  <label className="text-slate-600 text-sm">Risk Level</label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className={`w-3 h-3 rounded-full ${
+                      shipment.riskLevel === 'low' ? 'bg-green-500' :
+                      shipment.riskLevel === 'medium' ? 'bg-yellow-500' :
+                      shipment.riskLevel === 'high' ? 'bg-orange-500' :
+                      'bg-red-500'
+                    }`} />
+                    <span className="text-slate-900 capitalize">{shipment.riskLevel}</span>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-slate-600 text-sm">AI Compliance Score</label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-green-600 rounded-full"
+                        style={{ width: `${shipment.aiComplianceScore}%` }}
+                      />
+                    </div>
+                    <span className="text-slate-900 font-semibold">{shipment.aiComplianceScore}%</span>
+                  </div>
+                </div>
               </div>
 
-              <div className="grid grid-cols-4 gap-4">
+              {/* Flags & Status */}
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-slate-700 mb-2">Length (cm) *</label>
-                  <input
-                    type="number"
-                    name="length"
-                    value={formData.length}
-                    onChange={handleChange}
-                    placeholder="30"
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
+                  <label className="text-slate-600 text-sm">Compliance Flags</label>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {shipment.dangerousGoods && (
+                      <span className="px-3 py-1 bg-red-100 text-red-700 text-xs rounded-full">Dangerous Goods</span>
+                    )}
+                    {shipment.lithiumBattery && (
+                      <span className="px-3 py-1 bg-orange-100 text-orange-700 text-xs rounded-full">Lithium Battery</span>
+                    )}
+                    {shipment.temperatureControlled && (
+                      <span className="px-3 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">Temperature Controlled</span>
+                    )}
+                    {shipment.restrictedFlag && (
+                      <span className="px-3 py-1 bg-red-100 text-red-700 text-xs rounded-full">Restricted Item</span>
+                    )}
+                    {!shipment.dangerousGoods && !shipment.lithiumBattery && !shipment.temperatureControlled && !shipment.restrictedFlag && (
+                      <span className="px-3 py-1 bg-green-100 text-green-700 text-xs rounded-full">✓ No Special Flags</span>
+                    )}
+                  </div>
                 </div>
-
                 <div>
-                  <label className="block text-slate-700 mb-2">Width (cm) *</label>
-                  <input
-                    type="number"
-                    name="width"
-                    value={formData.width}
-                    onChange={handleChange}
-                    placeholder="20"
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-700 mb-2">Height (cm) *</label>
-                  <input
-                    type="number"
-                    name="height"
-                    value={formData.height}
-                    onChange={handleChange}
-                    placeholder="15"
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-700 mb-2">Weight (kg) *</label>
-                  <input
-                    type="number"
-                    name="weight"
-                    value={formData.weight}
-                    onChange={handleChange}
-                    placeholder="5"
-                    step="0.1"
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
+                  <label className="text-slate-600 text-sm">Broker Review Status</label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <CheckCircle2 className="w-4 h-4 text-green-600" />
+                    <span className="text-slate-900 capitalize">{shipment.brokerReviewStatus}</span>
+                  </div>
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* Carrier Options */}
-            <div className="bg-white rounded-xl p-6 border border-slate-200">
-              <div className="flex items-center gap-2 mb-4">
-                <Truck className="w-5 h-5 text-orange-600" />
-                <h2 className="text-slate-900">Carrier Options</h2>
-              </div>
+          {/* Carrier Selection */}
+          <div className="bg-white rounded-xl p-6 border border-slate-200">
+            <div className="flex items-center gap-2 mb-4">
+              <Truck className="w-5 h-5 text-orange-600" />
+              <h2 className="text-slate-900">Select Carrier</h2>
+            </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {carriers.map((carrier) => (
-                  <label
-                    key={carrier.id}
-                    className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                      formData.carrier === carrier.id
-                        ? 'border-blue-600 bg-blue-50'
-                        : 'border-slate-200 hover:border-slate-300'
-                    }`}
-                  >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {carriers.map((carrier) => (
+                <label
+                  key={carrier.id}
+                  className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                    formData.carrier === carrier.id
+                      ? 'border-blue-600 bg-blue-50'
+                      : 'border-slate-200 hover:border-slate-300'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="carrier"
+                    value={carrier.id}
+                    checked={formData.carrier === carrier.id}
+                    onChange={handleChange}
+                    className="sr-only"
+                  />
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">{carrier.logo}</span>
+                      <div>
+                        <p className="text-slate-900 font-semibold">{carrier.name}</p>
+                        <p className="text-slate-500 text-sm">{carrier.estimatedDays} days</p>
+                      </div>
+                    </div>
+                    <p className="text-slate-900 font-semibold">${carrier.basePrice}</p>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Delivery Speed */}
+          <div className="bg-white rounded-xl p-6 border border-slate-200">
+            <div className="flex items-center gap-2 mb-4">
+              <Clock className="w-5 h-5 text-green-600" />
+              <h2 className="text-slate-900">Delivery Speed</h2>
+            </div>
+
+            <div className="space-y-3">
+              {deliveryOptions.map((option) => (
+                <label
+                  key={option.id}
+                  className={`flex items-center justify-between p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                    formData.deliverySpeed === option.id
+                      ? 'border-green-600 bg-green-50'
+                      : 'border-slate-200 hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
                     <input
                       type="radio"
-                      name="carrier"
-                      value={carrier.id}
-                      checked={formData.carrier === carrier.id}
+                      name="deliverySpeed"
+                      value={option.id}
+                      checked={formData.deliverySpeed === option.id}
                       onChange={handleChange}
-                      className="sr-only"
+                      className="w-4 h-4 text-green-600"
                     />
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl">{carrier.logo}</span>
-                        <div>
-                          <p className="text-slate-900">{carrier.name}</p>
-                          <p className="text-slate-500 text-sm">{carrier.estimatedDays} days</p>
-                        </div>
-                      </div>
-                      <p className="text-slate-900">₹{(carrier.basePrice * INR_RATE).toFixed(0)}</p>
+                    <div>
+                      <p className="text-slate-900 font-semibold">{option.name}</p>
+                      <p className="text-slate-500 text-sm">{option.days} business days</p>
                     </div>
-                  </label>
-                ))}
+                  </div>
+                  <p className="text-slate-600">
+                    {option.multiplier === 1 ? 'Standard' : option.multiplier > 1 ? `+${((option.multiplier - 1) * 100).toFixed(0)}%` : `-${((1 - option.multiplier) * 100).toFixed(0)}%`}
+                  </p>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Payment Method & COD Info */}
+          {shipment.paymentTiming === 'COD' && (
+            <div className={`rounded-xl p-6 border-2 ${
+              codEligibility.eligible
+                ? 'bg-green-50 border-green-200'
+                : 'bg-red-50 border-red-200'
+            }`}>
+              <div className="flex items-start gap-3">
+                {codEligibility.eligible ? (
+                  <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                ) : (
+                  <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                )}
+                <div>
+                  <h3 className={`font-semibold mb-1 ${codEligibility.eligible ? 'text-green-900' : 'text-red-900'}`}>
+                    Cash on Delivery (COD)
+                  </h3>
+                  <p className={codEligibility.eligible ? 'text-green-700 text-sm' : 'text-red-700 text-sm'}>
+                    {codEligibility.reason}
+                  </p>
+                </div>
               </div>
             </div>
+          )}
 
-            {/* Delivery Speed */}
-            <div className="bg-white rounded-xl p-6 border border-slate-200">
-              <div className="flex items-center gap-2 mb-4">
-                <Clock className="w-5 h-5 text-green-600" />
-                <h2 className="text-slate-900">Delivery Speed Choices</h2>
-              </div>
-
-              <div className="space-y-3">
-                {deliveryOptions.map((option) => (
-                  <label
-                    key={option.id}
-                    className={`flex items-center justify-between p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                      formData.deliverySpeed === option.id
-                        ? 'border-green-600 bg-green-50'
-                        : 'border-slate-200 hover:border-slate-300'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="radio"
-                        name="deliverySpeed"
-                        value={option.id}
-                        checked={formData.deliverySpeed === option.id}
-                        onChange={handleChange}
-                        className="w-4 h-4 text-green-600"
-                      />
-                      <div>
-                        <p className="text-slate-900">{option.name}</p>
-                        <p className="text-slate-500 text-sm">{option.days} business days</p>
-                      </div>
-                    </div>
-                    <p className="text-slate-600">
-                      {option.multiplier === 1 ? 'Standard' : option.multiplier > 1 ? `+${((option.multiplier - 1) * 100).toFixed(0)}%` : `-${((1 - option.multiplier) * 100).toFixed(0)}%`}
-                    </p>
-                  </label>
-                ))}
+          {/* Booking Eligibility Alert */}
+          {!bookingEligible && (
+            <div className="bg-yellow-50 rounded-xl p-6 border border-yellow-200">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="text-yellow-900 font-semibold mb-1">Cannot Book This Shipment</h3>
+                  <ul className="text-yellow-700 text-sm space-y-1">
+                    {shipment.aiComplianceStatus !== 'cleared' && (
+                      <li>• AI compliance check: {shipment.aiComplianceStatus}</li>
+                    )}
+                    {shipment.brokerReviewStatus !== 'approved' && (
+                      <li>• Broker review status: {shipment.brokerReviewStatus}</li>
+                    )}
+                    {shipment.status !== 'token-generated' && (
+                      <li>• Shipment status: {shipment.status}</li>
+                    )}
+                    {!shipment.token && (
+                      <li>• No pre-clearance token generated</li>
+                    )}
+                  </ul>
+                </div>
               </div>
             </div>
+          )}
 
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={!isFormValid}
-              className={`w-full py-4 rounded-xl transition-all flex items-center justify-center gap-2 ${
-                isFormValid
-                  ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg hover:shadow-xl'
-                  : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-              }`}
-            >
-              <DollarSign className="w-5 h-5" />
-              Proceed to Payment
-            </button>
-          </form>
+          {/* Booking Button */}
+          <button
+            onClick={handleBookingClick}
+            disabled={isBookingDisabled() || !bookingEligible}
+            className={`w-full py-4 rounded-xl transition-all flex items-center justify-center gap-2 text-lg font-semibold ${
+              !isBookingDisabled() && bookingEligible
+                ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg hover:shadow-xl'
+                : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+            }`}
+          >
+            <Package className="w-5 h-5" />
+            {shipment.bookingStatus === 'booked' ? 'Already Booked' : 'Proceed to Payment'}
+          </button>
         </div>
 
-        {/* Price Summary */}
+        {/* Price Summary Sidebar */}
         <div className="lg:col-span-1">
           <div className="bg-white rounded-xl border border-slate-200 sticky top-6 p-6">
-            <h3 className="text-slate-900 mb-4">Price Summary</h3>
+            <h3 className="text-slate-900 mb-4 font-semibold">Price Summary</h3>
 
-            {formData.carrier ? (
-              <div className="space-y-4">
-                <div className="flex justify-between py-2">
-                  <span className="text-slate-600">Base Shipping</span>
-                  <span className="text-slate-900">${pricing.basePrice}</span>
-                </div>
+            <div className="space-y-4">
+              <div className="flex justify-between py-2">
+                <span className="text-slate-600">Base Shipping</span>
+                <span className="text-slate-900">${pricing.basePrice}</span>
+              </div>
 
-                <div className="flex justify-between py-2">
-                  <span className="text-slate-600">Delivery Speed</span>
-                  <span className="text-slate-900">${pricing.deliveryCharge.toFixed(2)}</span>
-                </div>
+              <div className="flex justify-between py-2">
+                <span className="text-slate-600">Delivery Speed</span>
+                <span className="text-slate-900">${pricing.deliveryCharge.toFixed(2)}</span>
+              </div>
 
-                <div className="flex justify-between py-2">
-                  <span className="text-slate-600">Customs Clearance</span>
-                  <span className="text-slate-900">${pricing.customsClearance}</span>
-                </div>
+              <div className="flex justify-between py-2">
+                <span className="text-slate-600">Customs Clearance</span>
+                <span className="text-slate-900">${pricing.customsClearance}</span>
+              </div>
 
+              {shipment.insuranceRequired && (
                 <div className="flex justify-between py-2">
                   <span className="text-slate-600">Insurance</span>
                   <span className="text-slate-900">${pricing.insurance}</span>
                 </div>
+              )}
 
-                <div className="flex justify-between py-2 border-t border-slate-200 pt-2">
-                  <span className="text-slate-600">Subtotal (USD)</span>
-                  <span className="text-slate-900">${pricing.subtotal.toFixed(2)}</span>
-                </div>
-
-                <div className="flex justify-between py-2">
-                  <span className="text-slate-600">GST (18%)</span>
-                  <span className="text-slate-900">${pricing.gst.toFixed(2)}</span>
-                </div>
-
-                <div className="flex justify-between py-3 border-t border-slate-200 pt-3">
-                  <span className="text-slate-900">Total (USD)</span>
-                  <span className="text-slate-900 text-xl">${pricing.total.toFixed(2)}</span>
-                </div>
-
-                <div className="p-4 bg-gradient-to-r from-orange-50 to-amber-50 rounded-lg border-2 border-orange-200">
-                  <div className="flex items-start gap-2 mb-2">
-                    <Info className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-slate-700 mb-1">Converted to INR</p>
-                      <p className="text-orange-900 text-2xl">₹{pricing.totalINR.toFixed(2)}</p>
-                      <p className="text-slate-500 text-xs mt-1">Exchange Rate: 1 USD = ₹{INR_RATE}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-3 bg-blue-50 rounded-lg">
-                  <p className="text-blue-900 text-sm">
-                    💡 Real-time INR conversion applied
-                  </p>
-                </div>
+              <div className="flex justify-between py-2 border-t border-slate-200 pt-2">
+                <span className="text-slate-600">Subtotal</span>
+                <span className="text-slate-900">${pricing.subtotal.toFixed(2)}</span>
               </div>
-            ) : (
-              <div className="text-center py-8">
-                <Package className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                <p className="text-slate-500 text-sm">Select a carrier to see pricing</p>
+
+              <div className="flex justify-between py-2">
+                <span className="text-slate-600">GST (18%)</span>
+                <span className="text-slate-900">${pricing.gst.toFixed(2)}</span>
               </div>
-            )}
+
+              <div className="flex justify-between py-3 border-t border-slate-200 pt-3">
+                <span className="text-slate-900 font-semibold">Total</span>
+                <span className="text-slate-900 text-2xl font-bold">${pricing.total.toFixed(2)}</span>
+              </div>
+
+              {shipment.estimatedDutyTax > 0 && (
+                <div className="p-4 bg-orange-50 rounded-lg border border-orange-200 mt-4">
+                  <p className="text-slate-700 text-sm mb-1">Est. Customs Duty/Tax</p>
+                  <p className="text-orange-900 text-xl font-semibold">${shipment.estimatedDutyTax.toLocaleString()}</p>
+                  <p className="text-slate-500 text-xs mt-1">Additional cost at customs</p>
+                </div>
+              )}
+
+              <div className="p-4 bg-blue-50 rounded-lg mt-4">
+                <p className="text-blue-900 text-sm">
+                  💡 Token valid for: {shipment.token}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>

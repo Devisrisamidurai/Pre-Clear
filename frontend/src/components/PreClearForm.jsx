@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Upload, Brain, Sparkles, FileText, AlertCircle } from 'lucide-react';
 
-interface PreClearFormProps {
-  onSubmit: (data: any) => void;
-}
+/**
+ * @typedef {Object} PreClearFormProps
+ * @property {(data: any) => void} onSubmit
+ */
 
 const countries = [
   { code: 'IN', name: 'India', flag: '🇮🇳' },
@@ -16,7 +17,7 @@ const countries = [
   { code: 'AU', name: 'Australia', flag: '🇦🇺' },
 ];
 
-export function PreClearForm({ onSubmit }: PreClearFormProps) {
+export function PreClearForm({ onSubmit }) {
   const [formData, setFormData] = useState({
     productName: '',
     productDescription: '',
@@ -26,10 +27,10 @@ export function PreClearForm({ onSubmit }: PreClearFormProps) {
     weight: ''
   });
 
-  const [aiAnalysis, setAiAnalysis] = useState<any>(null);
+  const [aiAnalysis, setAiAnalysis] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
@@ -57,7 +58,7 @@ export function PreClearForm({ onSubmit }: PreClearFormProps) {
     }, 2000);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit({
       ...formData,
@@ -328,7 +329,7 @@ export function PreClearForm({ onSubmit }: PreClearFormProps) {
                   <div className="p-4 bg-orange-50 rounded-lg border border-orange-200">
                     <p className="text-slate-700 text-sm mb-2">Required Documents</p>
                     <div className="space-y-1">
-                      {aiAnalysis.requiredDocs.map((doc: string, index: number) => (
+                      {aiAnalysis.requiredDocs.map((doc, index) => (
                         <div key={index} className="flex items-center gap-2">
                           <FileText className="w-3 h-3 text-orange-600" />
                           <span className="text-slate-700 text-sm">{doc}</span>

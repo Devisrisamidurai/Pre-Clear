@@ -6,7 +6,7 @@ import { Layout } from "./components/Layout";
 
 // Shipper Pages
 import { ShipperDashboard } from "./components/shipper/ShipperDashboard";
-import { CreateShipment } from "./components/shipper/CreateShipment";
+// CreateShipment removed - use new ShipmentForm
 import { ShipmentDetails } from "./components/shipper/ShipmentDetails";
 import { UploadDocuments } from "./components/shipper/UploadDocuments";
 import { AIEvaluationStatus } from "./components/shipper/AIEvaluationStatus";
@@ -14,6 +14,8 @@ import { RequestBrokerApproval } from "./components/shipper/RequestBrokerApprova
 import { ChatNotifications } from "./components/shipper/ChatNotifications";
 import { ShipmentToken } from "./components/shipper/ShipmentToken";
 import { ShipmentTokenList } from "./components/shipper/ShipmentTokenList";
+import { ShipmentForm } from "./components/shipper/ShipmentForm";
+import { createDefaultShipment } from "./store/shipmentsStore";
 import { ShipmentBooking } from "./components/shipper/ShipmentBooking";
 import { PaymentPage } from "./components/shipper/PaymentPage";
 import { PaymentList } from "./components/shipper/PaymentList";
@@ -69,9 +71,9 @@ export default function App() {
         return <ShipperDashboard onNavigate={handleNavigate} />;
       case "create-shipment":
         return (
-          <CreateShipment
+          <ShipmentForm
+            shipment={currentShipment || createDefaultShipment()}
             onNavigate={handleNavigate}
-            onSave={setCurrentShipment}
           />
         );
       case "shipment-details":
@@ -116,6 +118,13 @@ export default function App() {
       case "shipment-token-list":
         return (
           <ShipmentTokenList onNavigate={handleNavigate} />
+        );
+      case "shipment-form":
+        return (
+          <ShipmentForm
+            shipment={currentShipment}
+            onNavigate={handleNavigate}
+          />
         );
       case "booking":
         return (

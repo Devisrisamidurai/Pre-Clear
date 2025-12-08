@@ -8,7 +8,7 @@ export function AdminProfile() {
     email: 'admin@upspreclear.com',
     phone: '+1 (555) 000-1234',
     countryCode: '+1',
-    organizationName: 'UPS Pre-Clear System',
+    organizationName: 'Pre-Clear System',
     role: 'System Administrator',
     addressLine1: '55 Glenlake Parkway NE',
     addressLine2: '',

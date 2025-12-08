@@ -45,7 +45,7 @@ export function LoginPage({ onLogin, onNavigate }) {
           <div className="w-20 h-20 bg-yellow-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-2xl">
             <Shield className="w-10 h-10 text-slate-900" />
           </div>
-          <h1 className="text-4xl text-white mb-3">Welcome to UPS Pre-Clear</h1>
+          <h1 className="text-4xl text-white mb-3">Welcome to Pre-Clear</h1>
           <p className="text-slate-300 text-lg">Select your role and sign in to continue</p>
         </div>
 

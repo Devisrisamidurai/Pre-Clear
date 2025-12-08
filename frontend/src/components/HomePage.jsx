@@ -12,7 +12,7 @@ export function HomePage({ onLogin, onSignup }) {
               <Shield className="w-7 h-7 text-slate-900" />
             </div>
             <div>
-              <h1 className="text-white text-xl">UPS Pre-Clear</h1>
+              <h1 className="text-white text-xl">Pre-Clear</h1>
               <p className="text-yellow-400 text-xs">AI-Powered Customs Compliance</p>
             </div>
           </div>
@@ -246,7 +246,7 @@ export function HomePage({ onLogin, onSignup }) {
             onClick={onLogin}
             className="px-10 py-4 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-all shadow-2xl text-lg"
           >
-            Sign In to UPS Pre-Clear
+            Sign In to Pre-Clear
           </button>
         </div>
       </section>
@@ -259,7 +259,7 @@ export function HomePage({ onLogin, onSignup }) {
               <div className="w-8 h-8 bg-yellow-500 rounded-lg flex items-center justify-center">
                 <Shield className="w-5 h-5 text-slate-900" />
               </div>
-              <span className="text-white">UPS Pre-Clear</span>
+              <span className="text-white">Pre-Clear</span>
             </div>
             <p className="text-slate-400 text-sm">© 2024 UPS. All rights reserved.</p>
           </div>

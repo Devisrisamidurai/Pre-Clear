@@ -3,15 +3,16 @@ import { MessageCircle, Send, X, User } from 'lucide-react';
 import { useMessages } from '../hooks/useShipments';
 import { shipmentsStore } from '../store/shipmentsStore';
 
-interface ChatPanelProps {
-  shipmentId: string;
-  userRole: 'shipper' | 'broker';
-  userName: string;
-  isOpen: boolean;
-  onClose: () => void;
-}
+/**
+ * @typedef {Object} ChatPanelProps
+ * @property {string} shipmentId
+ * @property {'shipper' | 'broker'} userRole
+ * @property {string} userName
+ * @property {boolean} isOpen
+ * @property {() => void} onClose
+ */
 
-export function ChatPanel({ shipmentId, userRole, userName, isOpen, onClose }: ChatPanelProps) {
+export function ChatPanel({ shipmentId, userRole, userName, isOpen, onClose }) {
   const messages = useMessages(shipmentId);
   const [newMessage, setNewMessage] = useState('');
 

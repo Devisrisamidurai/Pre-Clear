@@ -2,22 +2,31 @@ import { User, Building, Mail, Phone, MapPin, Clock } from 'lucide-react';
 import { useState } from 'react';
 
 export function ShipperProfile() {
-  const [profile, setProfile] = useState({
-    firstName: 'John',
-    lastName: 'Shipper',
-    email: 'shipper@demo.com',
-    phone: '+1 (555) 123-4567',
-    companyName: 'Global Trade Inc',
-    companyRole: 'Shipper',
-    addressLine1: '123 Export Street',
-    addressLine2: 'Suite 400',
-    city: 'New York',
-    state: 'NY',
-    pinCode: '10001',
-    country: 'United States',
-    timezone: 'America/New_York',
-    language: 'English'
-  });
+  const initialProfile = () => {
+    try {
+      const stored = localStorage.getItem('userProfile');
+      if (stored) return JSON.parse(stored);
+    } catch (e) {}
+    return {
+      firstName: 'John',
+      lastName: 'Shipper',
+      email: 'shipper@demo.com',
+      phone: '+1 (555) 123-4567',
+      companyName: 'Global Trade Inc',
+      companyRole: 'Shipper',
+      addressLine1: '123 Export Street',
+      addressLine2: 'Suite 400',
+      city: 'New York',
+      state: 'NY',
+      pinCode: '10001',
+      country: 'United States',
+      countryCode: 'US',
+      timezone: 'America/New_York',
+      language: 'English'
+    };
+  };
+
+  const [profile, setProfile] = useState(initialProfile);
 
   const [isEditing, setIsEditing] = useState(false);
 
@@ -29,6 +38,11 @@ export function ShipperProfile() {
   const handleSave = () => {
     setIsEditing(false);
     // In real app, would save to backend
+    try {
+      localStorage.setItem('userProfile', JSON.stringify(profile));
+    } catch (e) {
+      console.warn('Could not persist profile to localStorage', e);
+    }
   };
 
   return (

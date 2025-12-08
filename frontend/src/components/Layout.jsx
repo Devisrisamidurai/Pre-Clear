@@ -96,7 +96,7 @@ export function Layout({ children, userRole, currentPage, onNavigate, onLogout }
               <Shield className="w-7 h-7 text-slate-900" />
             </div>
             <div>
-              <h1 className="text-slate-900 text-xl">UPS Pre-Clear</h1>
+              <h1 className="text-slate-900 text-xl">Pre-Clear</h1>
               <p className="text-slate-500 text-xs">Customs Compliance</p>
             </div>
           </div>

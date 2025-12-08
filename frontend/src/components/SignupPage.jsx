@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Shield, User, Briefcase, Settings, ArrowRight, ArrowLeft } from 'lucide-react';
+import { signUp } from '../api/auth';
 
 export function SignupPage({ onNavigate }) {
   const [selectedRole, setSelectedRole] = useState('');
@@ -13,8 +14,10 @@ export function SignupPage({ onNavigate }) {
     phone: ''
   });
   const [errors, setErrors] = useState({});
+  const [serverError, setServerError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     // Validation
@@ -57,10 +60,47 @@ export function SignupPage({ onNavigate }) {
       return;
     }
     
-    // Here you would typically make an API call to register the user
-    // For now, we'll just navigate to login
-    alert('Account created successfully! Please sign in.');
-    onNavigate('login');
+    // Call backend signup API
+    setServerError(null);
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password,
+        company: formData.company,
+        phone: formData.phone,
+        role: selectedRole,
+        tosAccepted: formData.tosAccepted || false
+      };
+
+      const res = await signUp(payload);
+      // Backend returns created location and body with id/email when successful
+      alert('Account created successfully! Please sign in.');
+      setIsSubmitting(false);
+      onNavigate('login');
+    } catch (err) {
+      setIsSubmitting(false);
+      // axios error handling
+      const code = err?.response?.data?.error;
+      if (code) {
+        // map known server error codes to friendly messages
+        const map = {
+          email_required: 'Email is required.',
+          invalid_email_format: 'Email must contain @ and .com',
+          password_required: 'Password is required.',
+          password_too_short: 'Password must be at least 8 characters.',
+          password_needs_digit: 'Password must include at least one number.',
+          password_needs_symbol: 'Password must include at least one special character.',
+          email_taken: 'Email is already registered.',
+          server_error: 'Server error. Please try again later.'
+        };
+        setServerError(map[code] || code);
+      } else {
+        setServerError('Server error. Please try again later.');
+      }
+    }
   };
 
   const handleChange = (e) => {
@@ -274,9 +314,20 @@ export function SignupPage({ onNavigate }) {
               </div>
 
               <div className="flex items-center gap-2 text-slate-300">
-                <input type="checkbox" className="rounded" required />
+                <input
+                  type="checkbox"
+                  name="tosAccepted"
+                  checked={formData.tosAccepted || false}
+                  onChange={(e) => setFormData(prev => ({ ...prev, tosAccepted: e.target.checked }))}
+                  className="rounded"
+                  required
+                />
                 <span className="text-sm">I agree to the Terms of Service and Privacy Policy</span>
               </div>
+
+              {serverError && (
+                <p className="text-red-400 text-sm mt-2">{serverError}</p>
+              )}
 
               <button
                 type="submit"

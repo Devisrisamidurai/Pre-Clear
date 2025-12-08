@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\MY HOME\\Downloads\\Pre-Clear\\backend\\backend.csproj": {}
+    "C:\\Users\\devis\\Pre-Clear\\backend\\backend.csproj": {}
   },
   "projects": {
-    "C:\\Users\\MY HOME\\Downloads\\Pre-Clear\\backend\\backend.csproj": {
+    "C:\\Users\\devis\\Pre-Clear\\backend\\backend.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\MY HOME\\Downloads\\Pre-Clear\\backend\\backend.csproj",
+        "projectUniqueName": "C:\\Users\\devis\\Pre-Clear\\backend\\backend.csproj",
         "projectName": "backend",
-        "projectPath": "C:\\Users\\MY HOME\\Downloads\\Pre-Clear\\backend\\backend.csproj",
-        "packagesPath": "C:\\Users\\MY HOME\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\MY HOME\\Downloads\\Pre-Clear\\backend\\obj\\",
+        "projectPath": "C:\\Users\\devis\\Pre-Clear\\backend\\backend.csproj",
+        "packagesPath": "C:\\Users\\devis\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\devis\\Pre-Clear\\backend\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\MY HOME\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "C:\\Users\\devis\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
@@ -37,8 +37,7 @@
           "enableAudit": "true",
           "auditLevel": "low",
           "auditMode": "direct"
-        },
-        "SdkAnalysisLevel": "9.0.300"
+        }
       },
       "frameworks": {
         "net8.0": {
@@ -48,6 +47,10 @@
               "target": "Package",
               "version": "[12.26.0, )"
             },
+            "Dapper": {
+              "target": "Package",
+              "version": "[2.1.1, )"
+            },
             "Microsoft.AspNetCore.OpenApi": {
               "target": "Package",
               "version": "[8.0.22, )"
@@ -56,9 +59,27 @@
               "target": "Package",
               "version": "[1.2.0, )"
             },
+            "Microsoft.EntityFrameworkCore": {
+              "target": "Package",
+              "version": "[8.0.0, )"
+            },
+            "Microsoft.EntityFrameworkCore.Design": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[8.0.0, )"
+            },
+            "Pomelo.EntityFrameworkCore.MySql": {
+              "target": "Package",
+              "version": "[8.0.0, )"
+            },
             "Swashbuckle.AspNetCore": {
               "target": "Package",
               "version": "[6.6.2, )"
+            },
+            "System.IdentityModel.Tokens.Jwt": {
+              "target": "Package",
+              "version": "[6.39.0, )"
             }
           },
           "imports": [
@@ -72,24 +93,6 @@
           ],
           "assetTargetFallback": true,
           "warn": true,
-          "downloadDependencies": [
-            {
-              "name": "Microsoft.AspNetCore.App.Ref",
-              "version": "[8.0.21, 8.0.21]"
-            },
-            {
-              "name": "Microsoft.NETCore.App.Host.win-x64",
-              "version": "[8.0.21, 8.0.21]"
-            },
-            {
-              "name": "Microsoft.NETCore.App.Ref",
-              "version": "[8.0.21, 8.0.21]"
-            },
-            {
-              "name": "Microsoft.WindowsDesktop.App.Ref",
-              "version": "[8.0.21, 8.0.21]"
-            }
-          ],
           "frameworkReferences": {
             "Microsoft.AspNetCore.App": {
               "privateAssets": "none"
@@ -98,7 +101,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.306/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.416/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

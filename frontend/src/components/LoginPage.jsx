@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Shield, User, Briefcase, Settings, ArrowRight, ArrowLeft } from 'lucide-react';
+import { signIn } from '../api/auth';
 
 export function LoginPage({ onLogin, onNavigate }) {
   const [selectedRole, setSelectedRole] = useState('');
@@ -8,9 +9,28 @@ export function LoginPage({ onLogin, onNavigate }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (selectedRole) {
-      onLogin(selectedRole);
-    }
+    // Call backend signin
+    (async () => {
+      try {
+        const res = await signIn({ email, password });
+        // res: { token, id, role }
+        if (res && res.token) {
+          // store token
+          localStorage.setItem('pc_token', res.token);
+          // set role based on server response
+          const roleToUse = res.role || selectedRole;
+          onLogin(roleToUse);
+        } else {
+          alert('Invalid credentials');
+        }
+      } catch (err) {
+        if (err.response && err.response.data && err.response.data.error) {
+          alert(err.response.data.error);
+        } else {
+          alert('Signin failed');
+        }
+      }
+    })();
   };
 
   const roles = [

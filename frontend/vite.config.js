@@ -55,6 +55,15 @@ export default defineConfig({
   server: {
     port: 3000,
     open: true,
+    proxy: {
+      // proxy /api requests to the backend during development
+      '/api': {
+        target: process.env.BACKEND_URL || 'http://localhost:5232',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/api/, '/api')
+      }
+    }
   },
 });
 

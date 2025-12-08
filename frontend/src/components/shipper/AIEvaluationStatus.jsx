@@ -406,7 +406,7 @@ export function AIEvaluationStatus({ shipment, onNavigate }) {
                   Update Documents & Retry
                 </button>
                 <button
-                  onClick={() => onNavigate('shipment-form', shipment)}
+                  onClick={() => onNavigate('create-shipment', shipment)}
                   className="px-6 py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
                 >
                   Edit Shipment Details

@@ -4,7 +4,7 @@ import { ChevronRight, MoreHorizontal } from "lucide-react@0.487.0";
 
 import { cn } from "./utils";
 
-function Breadcrumb({ ...props }: React.ComponentProps<"nav">) {
+function Breadcrumb(props) {
   return <nav aria-label="breadcrumb" data-slot="breadcrumb" {...props} />;
 }
 

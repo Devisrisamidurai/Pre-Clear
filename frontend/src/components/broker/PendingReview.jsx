@@ -5,12 +5,8 @@ import {
   XCircle, 
   Clock, 
   AlertTriangle,
-  Package,
-  MapPin,
-  DollarSign,
   Eye,
   MessageCircle,
-  FileSearch,
   Upload
 } from 'lucide-react';
 import { shipmentsStore } from '../../store/shipmentsStore';
@@ -27,6 +23,7 @@ export function PendingReview({ onNavigate }) {
   const [docRequestShipmentId, setDocRequestShipmentId] = useState(null);
   const [docRequestMessage, setDocRequestMessage] = useState('');
   const [requestedDocNames, setRequestedDocNames] = useState([]);
+  const [viewingDocument, setViewingDocument] = useState(null);
 
   // Load pending shipments from the store subscription
   useEffect(() => {
@@ -37,15 +34,14 @@ export function PendingReview({ onNavigate }) {
     );
     setPendingShipments(pending);
     
-    // Auto-select the shipment if we have one selected with a valid ID
+    // Keep selectedShipment in sync if it exists in updated list
     if (selectedShipment?.id) {
       const updatedSelected = pending.find(s => s.id === selectedShipment.id);
-      if (updatedSelected) {
-        setSelectedShipment(updatedSelected);
-      }
+      if (updatedSelected) setSelectedShipment(updatedSelected);
+      else setSelectedShipment(null);
     }
   }, [shipments, selectedShipment?.id]);
-  
+
   // Helper function to get currency based on origin country
   const getCurrency = (originCountry) => {
     const currencyMap = {
@@ -63,6 +59,29 @@ export function PendingReview({ onNavigate }) {
 
   const handleApprove = (shipmentId) => {
     brokerApprove(shipmentId, 'Approved by broker after document review.');
+    setSelectedShipment(null);
+  };
+
+  const handleDeny = (shipmentId) => {
+    const ok = window.confirm('Are you sure you want to deny this shipment? This action will notify the shipper.');
+    if (!ok) return;
+    // Use store helper if available or directly shipmentsStore
+    if (shipmentsStore?.brokerDeny) {
+      shipmentsStore.brokerDeny(shipmentId, 'Denied by broker.');
+    }
+    // Add notification for shipper (mirror other components)
+    if (shipmentsStore?.addNotification) {
+      shipmentsStore.addNotification({
+        id: `notif-${Date.now()}`,
+        type: 'broker-denied',
+        title: 'Shipment Denied',
+        message: `Your shipment #${shipmentId} has been denied by the broker.`,
+        shipmentId,
+        timestamp: new Date().toISOString(),
+        read: false,
+        recipientRole: 'shipper'
+      });
+    }
     setSelectedShipment(null);
   };
 
@@ -94,8 +113,12 @@ export function PendingReview({ onNavigate }) {
     setChatOpen(true);
   };
 
+  const openDocumentViewer = (doc, shipmentId) => {
+    setViewingDocument({ ...doc, shipmentId });
+  };
+
   return (
-    <div>
+    <div style={{ background: '#FBF9F6', minHeight: '100vh', padding: 24 }}>
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-slate-900 mb-2">Pending Reviews</h1>
@@ -181,7 +204,8 @@ export function PendingReview({ onNavigate }) {
                   </div>
                   <button
                     onClick={() => setSelectedShipment(selectedShipment?.id === shipment.id ? null : shipment)}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                    className="px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+                    style={{ background: '#E6B800', color: '#2F1B17', border: '2px solid #2F1B17' }}
                   >
                     <Eye className="w-4 h-4" />
                     {selectedShipment?.id === shipment.id ? 'Hide Details' : 'Review Details'}
@@ -257,18 +281,43 @@ export function PendingReview({ onNavigate }) {
                       <div className="bg-white rounded-lg p-4 border border-slate-200">
                         <h4 className="text-slate-900 mb-3">Uploaded Documents</h4>
                         <div className="space-y-2">
-                          <div className="flex items-center gap-2 text-sm">
-                            <CheckCircle className="w-4 h-4 text-green-600" />
-                            <span className="text-slate-700">Commercial Invoice</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-sm">
-                            <CheckCircle className="w-4 h-4 text-green-600" />
-                            <span className="text-slate-700">Packing List</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-sm">
-                            <CheckCircle className="w-4 h-4 text-green-600" />
-                            <span className="text-slate-700">Product Images</span>
-                          </div>
+                          {/* Render documents from shipment.documents if present */}
+                          {(shipment.documents || []).length > 0 ? (
+                            (shipment.documents || []).map((doc, idx) => (
+                              <div key={idx} className="flex items-center justify-between p-2 rounded-md border border-slate-100">
+                                <div className="flex items-center gap-3">
+                                  {doc.uploaded ? <CheckCircle className="w-4 h-4 text-green-600" /> : <XCircle className="w-4 h-4 text-red-600" />}
+                                  <div className="text-sm text-slate-700">{doc.name}</div>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                  {doc.uploaded ? (
+                                    <>
+                                      <button
+                                        onClick={() => openDocumentViewer(doc, shipment.id)}
+                                        className="px-3 py-1 rounded-lg text-sm"
+                                        style={{ background: '#2563EB', color: '#ffffff', border: '2px solid #1E40AF' }}
+                                      >
+                                        View
+                                      </button>
+                                      <a
+                                        href="#"
+                                        onClick={(e) => { e.preventDefault(); alert(`Downloading ${doc.name} for shipment ${shipment.id}`); }}
+                                        className="px-3 py-1 rounded-lg text-sm"
+                                        style={{ background: '#F3F4F6', border: '1px solid #E5E7EB' }}
+                                      >
+                                        Download
+                                      </a>
+                                    </>
+                                  ) : (
+                                    <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-700">Missing</span>
+                                  )}
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-sm text-slate-500">No documents uploaded yet</p>
+                          )}
                         </div>
                       </div>
 
@@ -299,21 +348,35 @@ export function PendingReview({ onNavigate }) {
                   <div className="mt-6 flex flex-wrap gap-3">
                     <button
                       onClick={() => handleApprove(shipment.id)}
-                      className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+                      className="px-6 py-3 rounded-lg flex items-center gap-2"
+                      style={{ background: '#16A34A', color: '#ffffff', border: '2px solid #12733A' }}
                     >
                       <CheckCircle className="w-5 h-5" />
                       Approve Shipment
                     </button>
+
                     <button
                       onClick={() => handleRequestDocuments(shipment.id)}
-                      className="px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors flex items-center gap-2"
+                      className="px-6 py-3 rounded-lg flex items-center gap-2"
+                      style={{ background: '#2563EB', color: '#ffffff', border: '2px solid #1E40AF' }}
                     >
                       <Upload className="w-5 h-5" />
                       Request Additional Documents
                     </button>
+
+                    <button
+                      onClick={() => handleDeny(shipment.id)}
+                      className="px-6 py-3 rounded-lg flex items-center gap-2"
+                      style={{ background: '#EF4444', color: '#ffffff', border: '2px solid #B91C1C' }}
+                    >
+                      <XCircle className="w-5 h-5" />
+                      Deny Shipment
+                    </button>
+
                     <button
                       onClick={() => handleOpenChat(shipment.id)}
-                      className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2"
+                      className="px-6 py-3 rounded-lg flex items-center gap-2"
+                      style={{ background: '#7A5B52', color: '#ffffff', border: '2px solid #5a4038' }}
                     >
                       <MessageCircle className="w-5 h-5" />
                       Message Shipper
@@ -376,7 +439,8 @@ export function PendingReview({ onNavigate }) {
               <button
                 onClick={submitDocumentRequest}
                 disabled={requestedDocNames.length === 0 || !docRequestMessage}
-                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ background: '#2563EB', color: '#ffffff', border: '2px solid #1E40AF' }}
               >
                 Send Request
               </button>
@@ -384,6 +448,37 @@ export function PendingReview({ onNavigate }) {
           </div>
         </div>
       )}
+
+      {/* Document Viewer Modal */}
+      {viewingDocument && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-3xl w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-slate-900">{viewingDocument.name}</h3>
+              <button onClick={() => setViewingDocument(null)} className="text-slate-500">Close</button>
+            </div>
+
+            {/* Placeholder preview: if you have URLs you can embed PDF/img here */}
+            <div className="border rounded-lg p-6 mb-4 min-h-[240px] flex items-center justify-center text-slate-500">
+              Preview not available in demo. Replace this area with an iframe/img when you have a URL.
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <a
+                href="#"
+                onClick={(e) => { e.preventDefault(); alert(`Downloading ${viewingDocument.name} for shipment ${viewingDocument.shipmentId}`); }}
+                className="px-4 py-2 rounded-lg"
+                style={{ background: '#2563EB', color: '#ffffff', border: '2px solid #1E40AF' }}
+              >
+                Download
+              </a>
+              <button onClick={() => setViewingDocument(null)} className="px-4 py-2 rounded-lg border">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+export default PendingReview;

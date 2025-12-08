@@ -7,12 +7,12 @@ export function ImportExportRules() {
   const [showForm, setShowForm] = useState(false);
   const [editingRule, setEditingRule] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterCountry, setFilterCountry] = useState('');
-  const [filterCategory, setFilterCategory] = useState('');
+  // filters removed per request (keeping only search)
 
   const [formData, setFormData] = useState({
     country: '',
     countryCode: '',
+    currency: 'USD',
     productCategory: '',
     hsCodeRange: '',
     restrictions: [],
@@ -23,6 +23,19 @@ export function ImportExportRules() {
     additionalNotes: '',
   });
 
+  // Small country -> currency mapping for the form dropdowns
+  const countries = [
+    { name: 'United States', code: 'US', currency: 'USD' },
+    { name: 'China', code: 'CN', currency: 'CNY' },
+    { name: 'India', code: 'IN', currency: 'INR' },
+    { name: 'United Kingdom', code: 'GB', currency: 'GBP' },
+    { name: 'Germany', code: 'DE', currency: 'EUR' },
+    { name: 'Canada', code: 'CA', currency: 'CAD' },
+    { name: 'Australia', code: 'AU', currency: 'AUD' },
+  ];
+
+  const currencyOptions = Array.from(new Set(countries.map(c => c.currency)));
+
   const handleOpenForm = (rule) => {
     if (rule) {
       setEditingRule(rule);
@@ -32,6 +45,7 @@ export function ImportExportRules() {
       setFormData({
         country: '',
         countryCode: '',
+        currency: 'USD',
         productCategory: '',
         hsCodeRange: '',
         restrictions: [],
@@ -55,6 +69,7 @@ export function ImportExportRules() {
       id: editingRule?.id || `rule-${Date.now()}`,
       country: formData.country,
       countryCode: formData.countryCode,
+      currency: formData.currency || 'USD',
       productCategory: formData.productCategory,
       hsCodeRange: formData.hsCodeRange || '',
       restrictions: formData.restrictions || [],
@@ -90,13 +105,11 @@ export function ImportExportRules() {
   const filteredRules = importExportRules.filter(rule => {
     const matchesSearch = rule.country.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           rule.productCategory.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCountry = filterCountry ? rule.countryCode === filterCountry : true;
-    const matchesCategory = filterCategory ? rule.productCategory === filterCategory : true;
-    return matchesSearch && matchesCountry && matchesCategory;
+    return matchesSearch;
   });
 
   return (
-    <div>
+    <div style={{ background: '#FBF9F6', minHeight: '100vh', padding: 24 }}>
       <div className="mb-8 flex justify-between items-center">
         <div>
           <h1 className="text-slate-900 mb-2">Import/Export Rules Management</h1>
@@ -104,7 +117,8 @@ export function ImportExportRules() {
         </div>
         <button
           onClick={() => handleOpenForm()}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+          className="px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+          style={{ background: '#E6B800', color: '#2F1B17', border: '2px solid #2F1B17' }}
         >
           <Plus className="w-4 h-4" />
           Add New Rule
@@ -123,27 +137,7 @@ export function ImportExportRules() {
             placeholder="Search by country or category"
           />
         </div>
-        <div className="flex items-center">
-          <Filter className="w-4 h-4 mr-2" />
-          <input
-            type="text"
-            value={filterCountry}
-            onChange={(e) => setFilterCountry(e.target.value.toUpperCase())}
-            className="px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Filter by country code"
-            maxLength={2}
-          />
-        </div>
-        <div className="flex items-center">
-          <Filter className="w-4 h-4 mr-2" />
-          <input
-            type="text"
-            value={filterCategory}
-            onChange={(e) => setFilterCategory(e.target.value)}
-            className="px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Filter by product category"
-          />
-        </div>
+        {/* country/category filters removed; only search is available now */}
       </div>
 
       {/* Rules List */}
@@ -230,7 +224,7 @@ export function ImportExportRules() {
             {(rule.maxValue || rule.maxWeight) && (
               <div className="flex gap-4 text-sm text-slate-600 mb-4">
                 {rule.maxValue && (
-                  <span>Max Value: ${rule.maxValue.toLocaleString()}</span>
+                  <span>Max Value: {rule.currency ? `${rule.currency} ` : '$'}{rule.maxValue.toLocaleString()}</span>
                 )}
                 {rule.maxWeight && (
                   <span>Max Weight: {rule.maxWeight}kg</span>
@@ -257,32 +251,41 @@ export function ImportExportRules() {
             </h2>
 
             <div className="space-y-4">
-              {/* Country */}
+              {/* Country and Currency */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-slate-700 mb-2 text-sm">
-                    Country *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.country}
-                    onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                  <label className="block text-slate-700 mb-2 text-sm">Country *</label>
+                  <select
+                    value={formData.countryCode || ''}
+                    onChange={(e) => {
+                      const code = e.target.value;
+                      const found = countries.find(c => c.code === code);
+                      setFormData({
+                        ...formData,
+                        country: found ? found.name : '',
+                        countryCode: found ? found.code : code,
+                        currency: found ? found.currency : formData.currency,
+                      });
+                    }}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="e.g., United States"
-                  />
+                  >
+                    <option value="">Select a country...</option>
+                    {countries.map(c => (
+                      <option key={c.code} value={c.code}>{c.name} ({c.code})</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
-                  <label className="block text-slate-700 mb-2 text-sm">
-                    Country Code *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.countryCode}
-                    onChange={(e) => setFormData({ ...formData, countryCode: e.target.value.toUpperCase() })}
+                  <label className="block text-slate-700 mb-2 text-sm">Currency</label>
+                  <select
+                    value={formData.currency || 'USD'}
+                    onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="e.g., US"
-                    maxLength={2}
-                  />
+                  >
+                    {currencyOptions.map(cur => (
+                      <option key={cur} value={cur}>{cur}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
@@ -360,7 +363,7 @@ export function ImportExportRules() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-slate-700 mb-2 text-sm">
-                    Max Value (USD)
+                    Max Value
                   </label>
                   <input
                     type="number"
@@ -369,6 +372,7 @@ export function ImportExportRules() {
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="e.g., 2500"
                   />
+                  <div className="text-xs text-slate-500 mt-1">Currency: {formData.currency || 'USD'}</div>
                 </div>
                 <div>
                   <label className="block text-slate-700 mb-2 text-sm">
@@ -402,7 +406,8 @@ export function ImportExportRules() {
             <div className="flex gap-3 mt-6">
               <button
                 onClick={handleSaveRule}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="flex-1 px-4 py-2 rounded-lg transition-colors"
+                style={{ background: '#E6B800', color: '#2F1B17', border: '2px solid #2F1B17' }}
               >
                 {editingRule ? 'Update Rule' : 'Add Rule'}
               </button>

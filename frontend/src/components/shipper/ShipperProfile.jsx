@@ -2,31 +2,22 @@ import { User, Building, Mail, Phone, MapPin, Clock } from 'lucide-react';
 import { useState } from 'react';
 
 export function ShipperProfile() {
-  const initialProfile = () => {
-    try {
-      const stored = localStorage.getItem('userProfile');
-      if (stored) return JSON.parse(stored);
-    } catch (e) {}
-    return {
-      firstName: 'John',
-      lastName: 'Shipper',
-      email: 'shipper@demo.com',
-      phone: '+1 (555) 123-4567',
-      companyName: 'Global Trade Inc',
-      companyRole: 'Shipper',
-      addressLine1: '123 Export Street',
-      addressLine2: 'Suite 400',
-      city: 'New York',
-      state: 'NY',
-      pinCode: '10001',
-      country: 'United States',
-      countryCode: 'US',
-      timezone: 'America/New_York',
-      language: 'English'
-    };
-  };
-
-  const [profile, setProfile] = useState(initialProfile);
+  const [profile, setProfile] = useState({
+    firstName: 'John',
+    lastName: 'Shipper',
+    email: 'shipper@demo.com',
+    phone: '+1 (555) 123-4567',
+    companyName: 'Global Trade Inc',
+    companyRole: 'Shipper',
+    addressLine1: '123 Export Street',
+    addressLine2: 'Suite 400',
+    city: 'New York',
+    state: 'NY',
+    pinCode: '10001',
+    country: 'United States',
+    timezone: 'America/New_York',
+    language: 'English'
+  });
 
   const [isEditing, setIsEditing] = useState(false);
 
@@ -38,295 +29,509 @@ export function ShipperProfile() {
   const handleSave = () => {
     setIsEditing(false);
     // In real app, would save to backend
-    try {
-      localStorage.setItem('userProfile', JSON.stringify(profile));
-    } catch (e) {
-      console.warn('Could not persist profile to localStorage', e);
-    }
   };
 
+  // color tokens
+  const WHITE = '#FFFFFF';
+  const CREAM = '#FBF9F6';
+  const YELLOW = '#E6B800';
+  const DARK = '#2F1B17';
+  const SOFT = '#7A5B52';
+  const MUTED_BORDER = 'rgba(47,27,23,0.08)';
+
   return (
-    <div>
-      <h1 className="text-slate-900 mb-2">Profile Settings</h1>
-      <p className="text-slate-600 mb-8">Manage your account information and preferences</p>
+    <div style={{ background: WHITE, minHeight: '100vh', padding: 24 }}>
+      <div style={{ maxWidth: 1024, margin: '0 auto', color: DARK }}>
+        <h1 style={{ color: DARK, marginBottom: 8 }}>Profile Settings</h1>
+        <p style={{ color: SOFT, marginBottom: 24 }}>Manage your account information and preferences</p>
 
-      <div className="max-w-3xl space-y-6">
-        {/* Profile Header */}
-        <div className="bg-white rounded-xl p-6 border border-slate-200">
-          <div className="flex items-center gap-6 mb-6">
-            <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-              <User className="w-12 h-12 text-white" />
-            </div>
-            <div>
-              <h2 className="text-slate-900 text-2xl mb-1">{profile.firstName} {profile.lastName}</h2>
-              <p className="text-slate-600 mb-2">{profile.email}</p>
-              <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">
-                {profile.companyRole}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex justify-end">
-            {!isEditing ? (
-              <button
-                onClick={() => setIsEditing(true)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Edit Profile
-              </button>
-            ) : (
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setIsEditing(false)}
-                  className="px-4 py-2 border-2 border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
+        <div style={{ display: 'grid', gap: 24 }}>
+          {/* Profile Header */}
+          <div
+            style={{
+              background: CREAM,
+              borderRadius: 12,
+              padding: 24,
+              border: `1px solid ${MUTED_BORDER}`,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 18, marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                <div
+                  style={{
+                    width: 96,
+                    height: 96,
+                    borderRadius: '50%',
+                    background: YELLOW,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
                 >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSave}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  <User style={{ width: 44, height: 44, color: DARK }} />
+                </div>
+              </div>
+
+              <div style={{ flex: 1 }}>
+                <h2 style={{ margin: 0, fontSize: 22, color: DARK }}>
+                  {profile.firstName} {profile.lastName}
+                </h2>
+                <p style={{ margin: '6px 0', color: SOFT }}>{profile.email}</p>
+                <span
+                  style={{
+                    display: 'inline-block',
+                    padding: '6px 10px',
+                    borderRadius: 999,
+                    background: 'rgba(47,27,23,0.06)',
+                    color: DARK,
+                    fontSize: 13,
+                  }}
                 >
-                  Save Changes
+                  {profile.companyRole}
+                </span>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              {!isEditing ? (
+                <button
+                  onClick={() => setIsEditing(true)}
+                  style={{
+                    padding: '10px 14px',
+                    background: YELLOW,
+                    color: DARK,
+                    borderRadius: 8,
+                    border: `2px solid ${DARK}`,
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Edit Profile
                 </button>
-              </div>
-            )}
+              ) : (
+                <div style={{ display: 'flex', gap: 12 }}>
+                  <button
+                    onClick={() => setIsEditing(false)}
+                    style={{
+                      padding: '10px 14px',
+                      background: WHITE,
+                      color: DARK,
+                      borderRadius: 8,
+                      border: `2px solid ${MUTED_BORDER}`,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    style={{
+                      padding: '10px 14px',
+                      background: YELLOW,
+                      color: DARK,
+                      borderRadius: 8,
+                      border: `2px solid ${DARK}`,
+                      fontWeight: 600,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Save Changes
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
 
-        {/* Personal Information */}
-        <div className="bg-white rounded-xl p-6 border border-slate-200">
-          <h3 className="text-slate-900 mb-4">Personal Information</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-slate-700 mb-2 text-sm">First Name</label>
-              <input
-                type="text"
-                name="firstName"
-                value={profile.firstName}
-                onChange={handleChange}
-                disabled={!isEditing}
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:text-slate-600"
-              />
-            </div>
-            <div>
-              <label className="block text-slate-700 mb-2 text-sm">Last Name</label>
-              <input
-                type="text"
-                name="lastName"
-                value={profile.lastName}
-                onChange={handleChange}
-                disabled={!isEditing}
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:text-slate-600"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Contact Information */}
-        <div className="bg-white rounded-xl p-6 border border-slate-200">
-          <div className="flex items-center gap-2 mb-4">
-            <Mail className="w-5 h-5 text-blue-600" />
-            <h3 className="text-slate-900">Contact Information</h3>
-          </div>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-slate-700 mb-2 text-sm">Email Address</label>
-              <input
-                type="email"
-                name="email"
-                value={profile.email}
-                onChange={handleChange}
-                disabled={!isEditing}
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:text-slate-600"
-              />
-            </div>
-            <div>
-              <label className="block text-slate-700 mb-2 text-sm">Phone Number</label>
-              <input
-                type="tel"
-                name="phone"
-                value={profile.phone}
-                onChange={handleChange}
-                disabled={!isEditing}
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:text-slate-600"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Company Details */}
-        <div className="bg-white rounded-xl p-6 border border-slate-200">
-          <div className="flex items-center gap-2 mb-4">
-            <Building className="w-5 h-5 text-purple-600" />
-            <h3 className="text-slate-900">Company Details</h3>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-slate-700 mb-2 text-sm">Company Name</label>
-              <input
-                type="text"
-                name="companyName"
-                value={profile.companyName}
-                onChange={handleChange}
-                disabled={!isEditing}
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:text-slate-600"
-              />
-            </div>
-            <div>
-              <label className="block text-slate-700 mb-2 text-sm">Role</label>
-              <select
-                name="companyRole"
-                value={profile.companyRole}
-                onChange={handleChange}
-                disabled={!isEditing}
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:text-slate-600"
-              >
-                <option value="Shipper">Shipper</option>
-                <option value="Broker">Broker</option>
-                <option value="Admin">Admin</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Address */}
-        <div className="bg-white rounded-xl p-6 border border-slate-200">
-          <div className="flex items-center gap-2 mb-4">
-            <MapPin className="w-5 h-5 text-green-600" />
-            <h3 className="text-slate-900">Address</h3>
-          </div>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-slate-700 mb-2 text-sm">Address Line 1</label>
-              <input
-                type="text"
-                name="addressLine1"
-                value={profile.addressLine1}
-                onChange={handleChange}
-                disabled={!isEditing}
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:text-slate-600"
-              />
-            </div>
-            <div>
-              <label className="block text-slate-700 mb-2 text-sm">Address Line 2 (Optional)</label>
-              <input
-                type="text"
-                name="addressLine2"
-                value={profile.addressLine2}
-                onChange={handleChange}
-                disabled={!isEditing}
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:text-slate-600"
-              />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Personal Information */}
+          <div
+            style={{
+              background: CREAM,
+              borderRadius: 12,
+              padding: 24,
+              border: `1px solid ${MUTED_BORDER}`,
+            }}
+          >
+            <h3 style={{ color: DARK, marginBottom: 12 }}>Personal Information</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div>
-                <label className="block text-slate-700 mb-2 text-sm">City</label>
+                <label style={{ display: 'block', color: SOFT, marginBottom: 8, fontSize: 13 }}>
+                  First Name
+                </label>
                 <input
                   type="text"
-                  name="city"
-                  value={profile.city}
+                  name="firstName"
+                  value={profile.firstName}
                   onChange={handleChange}
                   disabled={!isEditing}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:text-slate-600"
+                  style={{
+                    width: '100%',
+                    padding: 12,
+                    borderRadius: 8,
+                    border: `1px solid ${MUTED_BORDER}`,
+                    background: WHITE,
+                    color: DARK
+                  }}
                 />
               </div>
               <div>
-                <label className="block text-slate-700 mb-2 text-sm">State/Province</label>
+                <label style={{ display: 'block', color: SOFT, marginBottom: 8, fontSize: 13 }}>
+                  Last Name
+                </label>
                 <input
                   type="text"
-                  name="state"
-                  value={profile.state}
+                  name="lastName"
+                  value={profile.lastName}
                   onChange={handleChange}
                   disabled={!isEditing}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:text-slate-600"
+                  style={{
+                    width: '100%',
+                    padding: 12,
+                    borderRadius: 8,
+                    border: `1px solid ${MUTED_BORDER}`,
+                    background: WHITE,
+                    color: DARK
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Contact Information */}
+          <div
+            style={{
+              background: CREAM,
+              borderRadius: 12,
+              padding: 24,
+              border: `1px solid ${MUTED_BORDER}`,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <Mail style={{ width: 18, height: 18, color: DARK }} />
+              <h3 style={{ color: DARK, margin: 0 }}>Contact Information</h3>
+            </div>
+
+            <div style={{ display: 'grid', gap: 12 }}>
+              <div>
+                <label style={{ display: 'block', color: SOFT, marginBottom: 8, fontSize: 13 }}>
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  value={profile.email}
+                  onChange={handleChange}
+                  disabled={!isEditing}
+                  style={{
+                    width: '100%',
+                    padding: 12,
+                    borderRadius: 8,
+                    background: WHITE,
+                    color: DARK,
+                    border: `1px solid ${MUTED_BORDER}`
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', color: SOFT, marginBottom: 8, fontSize: 13 }}>
+                  Phone Number
+                </label>
+                <input
+                  type="tel"
+                  name="phone"
+                  value={profile.phone}
+                  onChange={handleChange}
+                  disabled={!isEditing}
+                  style={{
+                    width: '100%',
+                    padding: 12,
+                    borderRadius: 8,
+                    background: WHITE,
+                    color: DARK,
+                    border: `1px solid ${MUTED_BORDER}`
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Company Details */}
+          <div
+            style={{
+              background: CREAM,
+              borderRadius: 12,
+              padding: 24,
+              border: `1px solid ${MUTED_BORDER}`,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <Building style={{ width: 18, height: 18, color: DARK }} />
+              <h3 style={{ color: DARK, margin: 0 }}>Company Details</h3>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div>
+                <label style={{ display: 'block', color: SOFT, marginBottom: 8, fontSize: 13 }}>Company Name</label>
+                <input
+                  type="text"
+                  name="companyName"
+                  value={profile.companyName}
+                  onChange={handleChange}
+                  disabled={!isEditing}
+                  style={{
+                    width: '100%',
+                    padding: 12,
+                    borderRadius: 8,
+                    background: WHITE,
+                    color: DARK,
+                    border: `1px solid ${MUTED_BORDER}`
+                  }}
                 />
               </div>
               <div>
-                <label className="block text-slate-700 mb-2 text-sm">Pin Code</label>
+                <label style={{ display: 'block', color: SOFT, marginBottom: 8, fontSize: 13 }}>Role</label>
                 <input
                   type="text"
-                  name="pinCode"
-                  value={profile.pinCode}
+                  name="companyRole"
+                  value={profile.companyRole}
                   onChange={handleChange}
                   disabled={!isEditing}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:text-slate-600"
+                  style={{
+                    width: '100%',
+                    padding: 12,
+                    borderRadius: 8,
+                    background: WHITE,
+                    color: DARK,
+                    border: `1px solid ${MUTED_BORDER}`
+                  }}
                 />
               </div>
             </div>
-            <div>
-              <label className="block text-slate-700 mb-2 text-sm">Country</label>
-              <input
-                type="text"
-                name="country"
-                value={profile.country}
-                onChange={handleChange}
-                disabled={!isEditing}
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:text-slate-600"
-              />
-            </div>
           </div>
-        </div>
 
-        {/* Regional Preferences */}
-        <div className="bg-white rounded-xl p-6 border border-slate-200">
-          <div className="flex items-center gap-2 mb-4">
-            <Clock className="w-5 h-5 text-orange-600" />
-            <h3 className="text-slate-900">Regional Preferences</h3>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-slate-700 mb-2 text-sm">Timezone</label>
-              <select
-                name="timezone"
-                value={profile.timezone}
-                onChange={handleChange}
-                disabled={!isEditing}
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:text-slate-600"
-              >
-                <option value="America/New_York">America/New York (EST)</option>
-                <option value="America/Chicago">America/Chicago (CST)</option>
-                <option value="America/Denver">America/Denver (MST)</option>
-                <option value="America/Los_Angeles">America/Los Angeles (PST)</option>
-                <option value="Europe/London">Europe/London (GMT)</option>
-                <option value="Europe/Paris">Europe/Paris (CET)</option>
-                <option value="Asia/Dubai">Asia/Dubai (GST)</option>
-                <option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
-                <option value="Asia/Singapore">Asia/Singapore (SGT)</option>
-                <option value="Asia/Tokyo">Asia/Tokyo (JST)</option>
-              </select>
+          {/* Address */}
+          <div
+            style={{
+              background: CREAM,
+              borderRadius: 12,
+              padding: 24,
+              border: `1px solid ${MUTED_BORDER}`,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <MapPin style={{ width: 18, height: 18, color: DARK }} />
+              <h3 style={{ color: DARK, margin: 0 }}>Address</h3>
             </div>
-            <div>
-              <label className="block text-slate-700 mb-2 text-sm">Language</label>
-              <select
-                name="language"
-                value={profile.language}
-                onChange={handleChange}
-                disabled={!isEditing}
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:text-slate-600"
-              >
-                <option value="English">English</option>
-                <option value="Spanish">Español</option>
-                <option value="French">Français</option>
-                <option value="German">Deutsch</option>
-                <option value="Chinese">中文</option>
-                <option value="Japanese">日本語</option>
-              </select>
-            </div>
-          </div>
-        </div>
 
-        {/* Account Status */}
-        <div className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-6">
-          <h3 className="text-green-900 mb-2">Account Status</h3>
-          <p className="text-green-700 text-sm mb-4">Your account is active and verified</p>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-white rounded-lg p-3">
-              <p className="text-slate-600 text-xs mb-1">Member Since</p>
-              <p className="text-slate-900">January 2024</p>
+            <div style={{ display: 'grid', gap: 12 }}>
+              <div>
+                <label style={{ display: 'block', color: SOFT, marginBottom: 8, fontSize: 13 }}>Address Line 1</label>
+                <input
+                  type="text"
+                  name="addressLine1"
+                  value={profile.addressLine1}
+                  onChange={handleChange}
+                  disabled={!isEditing}
+                  style={{
+                    width: '100%',
+                    padding: 12,
+                    borderRadius: 8,
+                    background: WHITE,
+                    color: DARK,
+                    border: `1px solid ${MUTED_BORDER}`
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', color: SOFT, marginBottom: 8, fontSize: 13 }}>Address Line 2 (Optional)</label>
+                <input
+                  type="text"
+                  name="addressLine2"
+                  value={profile.addressLine2}
+                  onChange={handleChange}
+                  disabled={!isEditing}
+                  style={{
+                    width: '100%',
+                    padding: 12,
+                    borderRadius: 8,
+                    background: WHITE,
+                    color: DARK,
+                    border: `1px solid ${MUTED_BORDER}`
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+                <div>
+                  <label style={{ display: 'block', color: SOFT, marginBottom: 8, fontSize: 13 }}>City</label>
+                  <input
+                    type="text"
+                    name="city"
+                    value={profile.city}
+                    onChange={handleChange}
+                    disabled={!isEditing}
+                    style={{
+                      width: '100%',
+                      padding: 12,
+                      borderRadius: 8,
+                      background: WHITE,
+                      color: DARK,
+                      border: `1px solid ${MUTED_BORDER}`
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', color: SOFT, marginBottom: 8, fontSize: 13 }}>State/Province</label>
+                  <input
+                    type="text"
+                    name="state"
+                    value={profile.state}
+                    onChange={handleChange}
+                    disabled={!isEditing}
+                    style={{
+                      width: '100%',
+                      padding: 12,
+                      borderRadius: 8,
+                      background: WHITE,
+                      color: DARK,
+                      border: `1px solid ${MUTED_BORDER}`
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', color: SOFT, marginBottom: 8, fontSize: 13 }}>Pin Code</label>
+                  <input
+                    type="text"
+                    name="pinCode"
+                    value={profile.pinCode}
+                    onChange={handleChange}
+                    disabled={!isEditing}
+                    style={{
+                      width: '100%',
+                      padding: 12,
+                      borderRadius: 8,
+                      background: WHITE,
+                      color: DARK,
+                      border: `1px solid ${MUTED_BORDER}`
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', color: SOFT, marginBottom: 8, fontSize: 13 }}>Country</label>
+                <input
+                  type="text"
+                  name="country"
+                  value={profile.country}
+                  onChange={handleChange}
+                  disabled={!isEditing}
+                  style={{
+                    width: '100%',
+                    padding: 12,
+                    borderRadius: 8,
+                    background: WHITE,
+                    color: DARK,
+                    border: `1px solid ${MUTED_BORDER}`
+                  }}
+                />
+              </div>
             </div>
-            <div className="bg-white rounded-lg p-3">
-              <p className="text-slate-600 text-xs mb-1">Total Shipments</p>
-              <p className="text-slate-900">4 Shipments</p>
+          </div>
+
+          {/* Regional Preferences */}
+          <div
+            style={{
+              background: CREAM,
+              borderRadius: 12,
+              padding: 24,
+              border: `1px solid ${MUTED_BORDER}`,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <Clock style={{ width: 18, height: 18, color: DARK }} />
+              <h3 style={{ color: DARK, margin: 0 }}>Regional Preferences</h3>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div>
+                <label style={{ display: 'block', color: SOFT, marginBottom: 8, fontSize: 13 }}>Timezone</label>
+                <select
+                  name="timezone"
+                  value={profile.timezone}
+                  onChange={handleChange}
+                  disabled={!isEditing}
+                  style={{
+                    width: '100%',
+                    padding: 12,
+                    borderRadius: 8,
+                    background: WHITE,
+                    color: DARK,
+                    border: `1px solid ${MUTED_BORDER}`
+                  }}
+                >
+                  <option value="America/New_York">America/New York (EST)</option>
+                  <option value="America/Chicago">America/Chicago (CST)</option>
+                  <option value="America/Denver">America/Denver (MST)</option>
+                  <option value="America/Los_Angeles">America/Los Angeles (PST)</option>
+                  <option value="Europe/London">Europe/London (GMT)</option>
+                  <option value="Europe/Paris">Europe/Paris (CET)</option>
+                  <option value="Asia/Dubai">Asia/Dubai (GST)</option>
+                  <option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
+                  <option value="Asia/Singapore">Asia/Singapore (SGT)</option>
+                  <option value="Asia/Tokyo">Asia/Tokyo (JST)</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', color: SOFT, marginBottom: 8, fontSize: 13 }}>Language</label>
+                <select
+                  name="language"
+                  value={profile.language}
+                  onChange={handleChange}
+                  disabled={!isEditing}
+                  style={{
+                    width: '100%',
+                    padding: 12,
+                    borderRadius: 8,
+                    background: WHITE,
+                    color: DARK,
+                    border: `1px solid ${MUTED_BORDER}`
+                  }}
+                >
+                  <option value="English">English</option>
+                  <option value="Spanish">Español</option>
+                  <option value="French">Français</option>
+                  <option value="German">Deutsch</option>
+                  <option value="Chinese">中文</option>
+                  <option value="Japanese">日本語</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Account Status */}
+          <div
+            style={{
+              background: '#FFF3CC',
+              borderRadius: 12,
+              padding: 24,
+              border: `1px solid ${MUTED_BORDER}`,
+            }}
+          >
+            <h3 style={{ color: DARK, marginBottom: 8 }}>Account Status</h3>
+            <p style={{ color: SOFT, marginBottom: 12, fontSize: 13 }}>Your account is active and verified</p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div style={{ background: WHITE, borderRadius: 8, padding: 12 }}>
+                <p style={{ color: SOFT, fontSize: 12, margin: 0 }}>Member Since</p>
+                <p style={{ color: DARK, margin: '6px 0 0 0', fontWeight: 600 }}>January 2024</p>
+              </div>
+              <div style={{ background: WHITE, borderRadius: 8, padding: 12 }}>
+                <p style={{ color: SOFT, fontSize: 12, margin: 0 }}>Total Shipments</p>
+                <p style={{ color: DARK, margin: '6px 0 0 0', fontWeight: 600 }}>4 Shipments</p>
+              </div>
             </div>
           </div>
         </div>
@@ -334,4 +539,3 @@ export function ShipperProfile() {
     </div>
   );
 }
-

@@ -56,7 +56,7 @@ export function ShipmentTokenList({ onNavigate }) {
             Tokens will appear here once your shipments receive both AI and broker approval
           </p>
           <button
-            onClick={() => onNavigate('shipment-form')}
+            onClick={() => onNavigate('create-shipment')}
             className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             Create New Shipment

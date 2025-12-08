@@ -1,425 +1,129 @@
 // Centralized shipment data store for real-time synchronization between roles
 // This simulates a real-time database that all users can access
 
-// Default shipment template with full UPS data model
-const createDefaultShipment = (overrides = {}) => ({
-  // Shipment Basics
-  referenceId: '',
-  title: '',
-  mode: 'Air', // Air | Sea | Road | Rail | Courier | Multimodal
-  shipmentType: 'International', // Domestic | International
-  pickupType: 'Scheduled Pickup', // Scheduled Pickup | Drop-off
-  shipDate: new Date().toISOString().split('T')[0],
-  expectedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-  carrier: 'UPS',
-  
-  // Shipper
-  shipper: {
-    company: '',
-    contactName: '',
-    phone: '',
-    email: '',
-    address1: '',
-    address2: '',
-    city: '',
-    state: '',
-    postalCode: '',
-    country: '',
-    taxId: '',
-    exporterOfRecord: false,
-  },
-  
-  // Consignee
-  consignee: {
-    company: '',
-    contactName: '',
-    phone: '',
-    email: '',
-    address1: '',
-    address2: '',
-    city: '',
-    state: '',
-    postalCode: '',
-    country: '',
-    taxId: '',
-    importerOfRecord: false,
-  },
-  
-  // Packages
-  packages: [],
-  totalWeight: 0,
-  
-  // Service & Billing
-  serviceLevel: 'Standard', // Standard | Express | Economy | Freight
-  incoterm: 'FOB', // FOB, CIF, DDP, etc.
-  billTo: 'Shipper', // Shipper | Consignee | ThirdParty
-  billingAccountNumber: '',
-  currency: 'USD',
-  declaredValue: 0,
-  insuranceRequired: false,
-  
-  // Products
-  products: [],
-  
-  // Compliance
-  dangerousGoods: false,
-  lithiumBattery: false,
-  foodPharmaFlag: false,
-  temperatureControlled: false,
-  eccn: '',
-  exportLicenseRequired: false,
-  licenseNumber: '',
-  restrictedFlag: false,
-  sanctionedCountryFlag: false,
-  deniedPartyScreeningResult: 'passed',
-  
-  // Documents
-  documents: {
-    commercialInvoice: false,
-    packingList: false,
-    certificateOfOrigin: false,
-    exportLicense: false,
-    importLicense: false,
-    sds: false,
-    awb: false,
-    bol: false,
-    cmr: false,
-    others: [],
-  },
-  
-  // Notifications
-  notificationEmails: [],
-  brokerNotificationEnabled: true,
-  visibility: 'private', // private | shared | public
-  trackingEnabled: true,
-  
-  // AI & Broker
-  aiComplianceScore: 0,
-  aiComplianceStatus: 'pending', // pending | cleared | flagged | denied
-  aiValidationNotes: '',
-  missingDocuments: [],
-  suggestedHsCode: '',
-  estimatedDutyTax: 0,
-  riskLevel: 'low', // low | medium | high | critical
-  brokerReviewStatus: 'pending', // pending | approved | rejected | documents-requested
-  brokerComments: '',
-  brokerRequestedDocs: [],
-  brokerReviewedAt: null,
-  
-  // Booking & Payment
-  token: null,
-  tokenGeneratedAt: null,
-  status: 'draft', // draft | submitted | ai-review | awaiting-broker | token-generated | booked | shipped | delivered
-  bookingStatus: 'pending', // pending | booked | cancelled
-  paymentTiming: 'Prepaid', // Prepaid | Collect | COD
-  paymentStatus: 'pending', // pending | paid | failed
-  paymentMethod: '',
-  value: 0,
-  
-  // System
-  createdBy: 'shipper-1',
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
-  lastModifiedBy: 'shipper-1',
-  auditLogs: [],
-  
-  ...overrides,
-});
-
-// Mock initial data with full data model
+// Mock initial data
 const mockShipments = [
-  createDefaultShipment({
+  {
     id: 'SHP-001',
-    referenceId: 'REF-2024-001',
-    title: 'Electronic Components Shipment',
-    mode: 'Air',
-    shipmentType: 'International',
-    shipper: {
-      company: 'ABC Exports',
-      contactName: 'John Smith',
-      phone: '+1-555-0001',
-      email: 'john@abcexports.com',
-      address1: '123 Manufacturing St',
-      city: 'Shanghai',
-      state: 'SH',
-      postalCode: '200000',
-      country: 'CN',
-      taxId: 'CN123456789',
-      exporterOfRecord: true,
-    },
-    consignee: {
-      company: 'Tech Imports Inc',
-      contactName: 'Jane Doe',
-      phone: '+1-555-0101',
-      email: 'jane@techimports.com',
-      address1: '456 Import Ave',
-      city: 'New York',
-      state: 'NY',
-      postalCode: '10001',
-      country: 'US',
-      taxId: 'US987654321',
-      importerOfRecord: true,
-    },
-    products: [
-      {
-        id: 'PROD-001',
-        name: 'Electronic Integrated Circuits',
-        description: 'Industrial electronic integrated circuits',
-        hsCode: '8541.10.00',
-        category: 'Electronics',
-        qty: 100,
-        uom: 'pieces',
-        unitPrice: 50,
-        totalValue: 5000,
-        originCountry: 'CN',
-        reasonForExport: 'Commercial Trade',
-      }
-    ],
-    packages: [
-      {
-        id: 'PKG-001',
-        type: 'Box',
-        length: 50,
-        width: 40,
-        height: 30,
-        dimUnit: 'cm',
-        weight: 25.5,
-        weightUnit: 'kg',
-        stackable: true,
-      }
-    ],
-    totalWeight: 25.5,
-    declaredValue: 5000,
-    estimatedDutyTax: 500,
-    aiComplianceScore: 94,
-    aiComplianceStatus: 'cleared',
-    riskLevel: 'low',
-    brokerReviewStatus: 'approved',
-    token: 'PCT-87654321',
+    productName: 'Electronic Components',
+    productDescription: 'Industrial electronic integrated circuits',
+    hsCode: '8541.10.00',
+    quantity: '100',
+    weight: '25.5',
+    value: '5000',
+    originCountry: 'CN',
+    originCity: 'Shanghai',
+    originAddress: '123 Manufacturing St, Shanghai',
+    destCountry: 'US',
+    destCity: 'New York',
+    destAddress: '456 Import Ave, New York, NY',
     status: 'token-generated',
-    bookingStatus: 'pending',
+    aiApproval: 'approved',
+    aiScore: 94,
+    aiEvaluatedAt: '2024-12-02T10:30:00Z',
+    brokerApproval: 'approved',
+    brokerReviewedAt: '2024-12-02T14:30:00Z',
+    token: 'UPS-PCT-87654321',
+    tokenGeneratedAt: '2024-12-02T14:35:00Z',
+    documents: [
+      { name: 'Commercial Invoice', type: 'invoice', uploaded: true, uploadedAt: '2024-12-02T09:00:00Z' },
+      { name: 'Packing List', type: 'packing-list', uploaded: true, uploadedAt: '2024-12-02T09:05:00Z' },
+      { name: 'Certificate of Origin', type: 'certificate', uploaded: true, uploadedAt: '2024-12-02T09:10:00Z' },
+    ],
     createdAt: '2024-12-02T08:00:00Z',
     updatedAt: '2024-12-02T14:35:00Z',
-  }),
-  createDefaultShipment({
+    shipperId: 'shipper-1',
+    shipperName: 'ABC Exports'
+  },
+  {
     id: 'SHP-002',
-    referenceId: 'REF-2024-002',
-    title: 'Textile Goods Shipment',
-    mode: 'Sea',
-    shipmentType: 'International',
-    shipper: {
-      company: 'ABC Exports',
-      contactName: 'John Smith',
-      phone: '+1-555-0001',
-      email: 'john@abcexports.com',
-      address1: '789 Textile Plaza',
-      city: 'Mumbai',
-      state: 'MH',
-      postalCode: '400001',
-      country: 'IN',
-      taxId: 'IN123456789',
-      exporterOfRecord: true,
-    },
-    consignee: {
-      company: 'Fashion Retailers LLC',
-      contactName: 'Mike Johnson',
-      phone: '+1-555-0102',
-      email: 'mike@fashionretail.com',
-      address1: '321 Fashion Blvd',
-      city: 'Los Angeles',
-      state: 'CA',
-      postalCode: '90001',
-      country: 'US',
-      taxId: 'US987654322',
-      importerOfRecord: true,
-    },
-    products: [
-      {
-        id: 'PROD-002',
-        name: 'Cotton Fabric Rolls',
-        description: 'Cotton fabric rolls for apparel manufacturing',
-        hsCode: '5208.31.00',
-        category: 'Textiles',
-        qty: 500,
-        uom: 'meters',
-        unitPrice: 24,
-        totalValue: 12000,
-        originCountry: 'IN',
-        reasonForExport: 'Commercial Trade',
-      }
-    ],
-    packages: [
-      {
-        id: 'PKG-002',
-        type: 'Pallet',
-        length: 120,
-        width: 100,
-        height: 150,
-        dimUnit: 'cm',
-        weight: 150,
-        weightUnit: 'kg',
-        stackable: true,
-      }
-    ],
-    totalWeight: 150,
-    declaredValue: 12000,
-    estimatedDutyTax: 1200,
-    aiComplianceScore: 96,
-    aiComplianceStatus: 'cleared',
-    riskLevel: 'low',
-    brokerReviewStatus: 'pending',
+    productName: 'Textile Goods',
+    productDescription: 'Cotton fabric rolls for apparel manufacturing',
+    hsCode: '5208.31.00',
+    quantity: '500',
+    weight: '150',
+    value: '12000',
+    originCountry: 'IN',
+    originCity: 'Mumbai',
+    originAddress: '789 Textile Plaza, Mumbai',
+    destCountry: 'US',
+    destCity: 'Los Angeles',
+    destAddress: '321 Fashion Blvd, Los Angeles, CA',
     status: 'awaiting-broker',
-    bookingStatus: 'pending',
+    aiApproval: 'approved',
+    aiScore: 96,
+    aiEvaluatedAt: '2024-12-03T08:00:00Z',
+    brokerApproval: 'pending',
+    documents: [
+      { name: 'Commercial Invoice', type: 'invoice', uploaded: true, uploadedAt: '2024-12-03T07:00:00Z' },
+      { name: 'Packing List', type: 'packing-list', uploaded: true, uploadedAt: '2024-12-03T07:05:00Z' },
+      { name: 'Certificate of Origin', type: 'certificate', uploaded: true, uploadedAt: '2024-12-03T07:10:00Z' },
+    ],
     createdAt: '2024-12-03T06:00:00Z',
     updatedAt: '2024-12-03T08:00:00Z',
-  }),
-  createDefaultShipment({
+    shipperId: 'shipper-1',
+    shipperName: 'ABC Exports'
+  },
+  {
     id: 'SHP-003',
-    referenceId: 'REF-2024-003',
-    title: 'Medical Devices Shipment',
-    mode: 'Air',
-    shipmentType: 'International',
-    shipper: {
-      company: 'MedTech Corp',
-      contactName: 'Akira Tanaka',
-      phone: '+81-3-xxxx-xxxx',
-      email: 'akira@medtech.jp',
-      address1: '555 MedTech Tower',
-      city: 'Tokyo',
-      state: 'Tokyo',
-      postalCode: '100-0001',
-      country: 'JP',
-      taxId: 'JP123456789',
-      exporterOfRecord: true,
-    },
-    consignee: {
-      company: 'Boston Medical Supplies',
-      contactName: 'Sarah Wilson',
-      phone: '+1-555-0103',
-      email: 'sarah@bostonmed.com',
-      address1: '789 Hospital Drive',
-      city: 'Boston',
-      state: 'MA',
-      postalCode: '02101',
-      country: 'US',
-      taxId: 'US987654323',
-      importerOfRecord: true,
-    },
-    products: [
-      {
-        id: 'PROD-003',
-        name: 'Diagnostic Medical Equipment',
-        description: 'Diagnostic medical equipment for hospitals',
-        hsCode: '9018.19.00',
-        category: 'Medical Devices',
-        qty: 20,
-        uom: 'units',
-        unitPrice: 1250,
-        totalValue: 25000,
-        originCountry: 'JP',
-        reasonForExport: 'Commercial Trade',
-      }
-    ],
-    packages: [
-      {
-        id: 'PKG-003',
-        type: 'Case',
-        length: 80,
-        width: 60,
-        height: 40,
-        dimUnit: 'cm',
-        weight: 45,
-        weightUnit: 'kg',
-        stackable: false,
-      }
-    ],
-    totalWeight: 45,
-    declaredValue: 25000,
-    estimatedDutyTax: 2500,
-    aiComplianceScore: 85,
-    aiComplianceStatus: 'flagged',
-    riskLevel: 'medium',
-    brokerReviewStatus: 'pending',
+    productName: 'Medical Devices',
+    productDescription: 'Diagnostic medical equipment',
+    hsCode: '9018.19.00',
+    quantity: '20',
+    weight: '45',
+    value: '25000',
+    originCountry: 'JP',
+    originCity: 'Tokyo',
+    originAddress: '555 MedTech Tower, Tokyo',
+    destCountry: 'US',
+    destCity: 'Boston',
+    destAddress: '789 Hospital Drive, Boston, MA',
     status: 'documents-uploaded',
-    bookingStatus: 'pending',
-    foodPharmaFlag: true,
+    aiApproval: 'not-started',
+    brokerApproval: 'not-started',
+    documents: [
+      { name: 'Commercial Invoice', type: 'invoice', uploaded: true, uploadedAt: '2024-12-03T10:00:00Z' },
+      { name: 'Packing List', type: 'packing-list', uploaded: true, uploadedAt: '2024-12-03T10:05:00Z' },
+      { name: 'Certificate of Origin', type: 'certificate', uploaded: true, uploadedAt: '2024-12-03T10:10:00Z' },
+    ],
     createdAt: '2024-12-03T09:00:00Z',
     updatedAt: '2024-12-03T10:10:00Z',
-  }),
-  createDefaultShipment({
+    shipperId: 'shipper-1',
+    shipperName: 'ABC Exports'
+  },
+  {
     id: 'SHP-004',
-    referenceId: 'REF-2024-004',
-    title: 'Industrial Machinery Shipment',
-    mode: 'Sea',
-    shipmentType: 'International',
-    shipper: {
-      company: 'Industrial Solutions Ltd',
-      contactName: 'Wei Zhang',
-      phone: '+86-755-xxxx-xxxx',
-      email: 'wei@indusolve.com',
-      address1: '123 Industrial Park',
-      city: 'Shenzhen',
-      state: 'GD',
-      postalCode: '518000',
-      country: 'CN',
-      taxId: 'CN987654321',
-      exporterOfRecord: true,
-    },
-    consignee: {
-      company: 'Manufacturing Corp USA',
-      contactName: 'Tom Anderson',
-      phone: '+1-555-0104',
-      email: 'tom@mancorp.com',
-      address1: '456 Manufacturing Way',
-      city: 'Detroit',
-      state: 'MI',
-      postalCode: '48201',
-      country: 'US',
-      taxId: 'US987654324',
-      importerOfRecord: true,
-    },
-    products: [
-      {
-        id: 'PROD-004',
-        name: 'CNC Milling Machines',
-        description: 'CNC milling machines for industrial manufacturing',
-        hsCode: '8459.10.00',
-        category: 'Machinery',
-        qty: 5,
-        uom: 'units',
-        unitPrice: 30000,
-        totalValue: 150000,
-        originCountry: 'CN',
-        reasonForExport: 'Commercial Trade',
-      }
-    ],
-    packages: [
-      {
-        id: 'PKG-004',
-        type: 'Crate',
-        length: 300,
-        width: 250,
-        height: 200,
-        dimUnit: 'cm',
-        weight: 2500,
-        weightUnit: 'kg',
-        stackable: false,
-      }
-    ],
-    totalWeight: 2500,
-    declaredValue: 150000,
-    estimatedDutyTax: 15000,
-    aiComplianceScore: 88,
-    aiComplianceStatus: 'cleared',
-    riskLevel: 'medium',
-    brokerReviewStatus: 'documents-requested',
-    brokerComments: 'Please provide updated safety certificates and detailed technical specifications.',
-    brokerRequestedDocs: ['Safety Certificate', 'Technical Specifications'],
+    productName: 'Industrial Machinery',
+    productDescription: 'CNC milling machines',
+    hsCode: '8459.10.00',
+    quantity: '5',
+    weight: '2500',
+    value: '150000',
+    originCountry: 'CN',
+    originCity: 'Shenzhen',
+    originAddress: '123 Industrial Park, Shenzhen',
+    destCountry: 'US',
+    destCity: 'Detroit',
+    destAddress: '456 Manufacturing Way, Detroit, MI',
     status: 'document-requested',
-    bookingStatus: 'pending',
+    aiApproval: 'approved',
+    aiScore: 88,
+    aiEvaluatedAt: '2024-12-02T11:00:00Z',
+    brokerApproval: 'documents-requested',
+    brokerReviewedAt: '2024-12-02T15:00:00Z',
+    brokerNotes: 'Please provide updated safety certificates and detailed technical specifications.',
+    documents: [
+      { name: 'Commercial Invoice', type: 'invoice', uploaded: true, uploadedAt: '2024-12-02T10:00:00Z' },
+      { name: 'Packing List', type: 'packing-list', uploaded: true, uploadedAt: '2024-12-02T10:05:00Z' },
+      { name: 'Certificate of Origin', type: 'certificate', uploaded: true, uploadedAt: '2024-12-02T10:10:00Z' },
+      { name: 'Safety Certificate', type: 'certificate', uploaded: false, requested: true, requestedAt: '2024-12-02T15:00:00Z' },
+      { name: 'Technical Specifications', type: 'specification', uploaded: false, requested: true, requestedAt: '2024-12-02T15:00:00Z' },
+    ],
     createdAt: '2024-12-02T09:00:00Z',
     updatedAt: '2024-12-02T15:00:00Z',
-  }),
+    shipperId: 'shipper-1',
+    shipperName: 'ABC Exports'
+  }
 ];
 
 const mockMessages = [
@@ -663,7 +367,7 @@ class ShipmentsStore {
       shipment.brokerNotes = notes;
       
       // Generate token
-      const token = `PCT-${Math.random().toString(36).substr(2, 8).toUpperCase()}`;
+      const token = `UPS-PCT-${Math.random().toString(36).substr(2, 8).toUpperCase()}`;
       shipment.token = token;
       shipment.tokenGeneratedAt = new Date().toISOString();
       shipment.status = 'token-generated';
@@ -888,5 +592,3 @@ class ShipmentsStore {
 // Export singleton instance
 export const shipmentsStore = new ShipmentsStore();
 
-// Export the factory function for creating default shipments
-export { createDefaultShipment };

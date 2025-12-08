@@ -1,5 +1,5 @@
 import * as React from "react";
-const { cva } = require("class-variance-authority@0.7.1");
+import { cva, type VariantProps } from "class-variance-authority@0.7.1";
 
 import { cn } from "./utils";
 
@@ -24,18 +24,17 @@ function Alert({
   variant,
   ...props
 }) {
-  return React.createElement(
-    "div",
-    {
-      "data-slot": "alert",
-      role: "alert",
-      className: cn(alertVariants({ variant }), className),
-      ...props,
-    }
+  return (
+    <div
+      data-slot="alert"
+      role="alert"
+      className={cn(alertVariants({ variant }), className)}
+      {...props}
+    />
   );
 }
 
-function AlertTitle({ className, ...props }: React.ComponentProps<"div">) {
+function AlertTitle({ className, ...props }) {
   return (
     <div
       data-slot="alert-title"
@@ -51,7 +50,7 @@ function AlertTitle({ className, ...props }: React.ComponentProps<"div">) {
 function AlertDescription({
   className,
   ...props
-}: React.ComponentProps<"div">) {
+}) {
   return (
     <div
       data-slot="alert-description"

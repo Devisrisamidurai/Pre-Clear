@@ -1,6 +1,6 @@
-import { PackagePlus, Package, Clock, CheckCircle, XCircle, AlertTriangle, TrendingUp, Upload, DollarSign, Eye, Edit } from 'lucide-react';
+import { PackagePlus, Package, Clock, CheckCircle, XCircle, AlertTriangle, TrendingUp, Upload, DollarSign, Eye } from 'lucide-react';
 import { NotificationPanel } from '../NotificationPanel';
-import { shipmentsStore, createDefaultShipment } from '../../store/shipmentsStore';
+import { shipmentsStore } from '../../store/shipmentsStore';
 import { useState } from 'react';
 import { useShipments } from '../../hooks/useShipments';
 import { getCurrencyByCountry } from '../../utils/validation';
@@ -82,27 +82,15 @@ export function ShipperDashboard({ onNavigate }) {
     if (shipment.status === 'cancelled') {
       return null;
     }
-    if (shipment.status === 'draft' || shipment.status === 'document-requested') {
+    if (shipment.status === 'document-requested') {
       return (
-        <div className="flex gap-2">
-          <button
-            onClick={() => onNavigate('shipment-form', shipment)}
-            className="px-3 py-1.5 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors text-sm flex items-center gap-1"
-            title="Edit shipment details"
-          >
-            <Edit className="w-3.5 h-3.5" />
-            Edit
-          </button>
-          {shipment.status === 'document-requested' && (
-            <button
-              onClick={() => onNavigate('upload-documents', shipment)}
-              className="px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm flex items-center gap-1"
-            >
-              <Upload className="w-3.5 h-3.5" />
-              Upload
-            </button>
-          )}
-        </div>
+        <button
+          onClick={() => onNavigate('upload-documents', shipment)}
+          className="px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm flex items-center gap-1"
+        >
+          <Upload className="w-3.5 h-3.5" />
+          Upload Docs
+        </button>
       );
     }
     if (shipment.token && !shipment.paymentStatus) {
@@ -247,10 +235,7 @@ export function ShipperDashboard({ onNavigate }) {
       {/* Quick Actions - Only Create Shipment */}
       <div className="mb-8">
         <button
-          onClick={() => {
-            const newShipment = createDefaultShipment();
-            onNavigate('shipment-form', newShipment);
-          }}
+          onClick={() => onNavigate('create-shipment')}
           className="w-full p-6 bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-xl hover:shadow-2xl transition-all group"
         >
           <div className="flex items-center gap-4">

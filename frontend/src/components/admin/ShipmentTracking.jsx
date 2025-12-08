@@ -7,8 +7,11 @@ export function ShipmentTracking() {
   ];
 
   return (
-    <div>
-      <h1 className="text-slate-900 mb-2">Shipment Tracking Overview</h1>
+    <div style={{ background: '#FBF9F6', minHeight: '100vh', padding: 24 }}>
+      <h1 className="mb-2" style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 10, fontSize: '1.5rem' }}>
+        <MapPin className="w-6 h-6" style={{ color: '#3A2B28' }} />
+        <span>Shipment Tracking Overview</span>
+      </h1>
       <p className="text-slate-600 mb-8">Track all shipments across the platform</p>
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
         <table className="w-full">

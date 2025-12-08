@@ -33,7 +33,7 @@ export function ShipmentDetails({ shipment, onNavigate }) {
   const { updateShipmentStatus, updateAIApproval, requestBrokerApproval, uploadDocument } = useShipments();
   const [currentShipment, setCurrentShipment] = useState(shipment);
   const [chatOpen, setChatOpen] = useState(false);
-  const [uploadingDocKey, setUploadingDocKey] = useState(null);
+  const [uploading, setUploading] = useState(false);
   const [aiProcessing, setAiProcessing] = useState(false);
   const [requestingBroker, setRequestingBroker] = useState(false);
   const [showTokenNotification, setShowTokenNotification] = useState(false);
@@ -81,88 +81,28 @@ export function ShipmentDetails({ shipment, onNavigate }) {
     return () => unsubscribe();
   }, [shipment.id, currentShipment.status]);
 
-  // Required documents - map from shipment.documents selected
-  const [documents, setDocuments] = useState(() => {
-    const shipmentDocs = currentShipment?.documents || {};
-    const uploadedDocs = currentShipment?.uploadedDocuments || {};
-    const documentsList = [
-      { name: 'Commercial Invoice', key: 'commercialInvoice', uploaded: uploadedDocs.commercialInvoice?.uploaded || false, fileName: uploadedDocs.commercialInvoice?.name || '', required: true },
-      { name: 'Packing List', key: 'packingList', uploaded: uploadedDocs.packingList?.uploaded || false, fileName: uploadedDocs.packingList?.name || '', required: true },
-      { name: 'Certificate of Origin', key: 'certificateOfOrigin', uploaded: uploadedDocs.certificateOfOrigin?.uploaded || false, fileName: uploadedDocs.certificateOfOrigin?.name || '', required: false },
-      { name: 'Export License', key: 'exportLicense', uploaded: uploadedDocs.exportLicense?.uploaded || false, fileName: uploadedDocs.exportLicense?.name || '', required: false },
-      { name: 'Import License', key: 'importLicense', uploaded: uploadedDocs.importLicense?.uploaded || false, fileName: uploadedDocs.importLicense?.name || '', required: false },
-      { name: 'Safety Data Sheet (SDS)', key: 'sds', uploaded: uploadedDocs.sds?.uploaded || false, fileName: uploadedDocs.sds?.name || '', required: false },
-      { name: 'Airway Bill (AWB)', key: 'awb', uploaded: uploadedDocs.awb?.uploaded || false, fileName: uploadedDocs.awb?.name || '', required: false },
-      { name: 'Bill of Lading (BOL)', key: 'bol', uploaded: uploadedDocs.bol?.uploaded || false, fileName: uploadedDocs.bol?.name || '', required: false },
-      { name: 'CMR (International Road Transport)', key: 'cmr', uploaded: uploadedDocs.cmr?.uploaded || false, fileName: uploadedDocs.cmr?.name || '', required: false },
-    ];
-    // Filter to show only selected documents
-    return documentsList.filter(d => shipmentDocs[d.key]);
-  });
+  // Required documents
+  const [documents, setDocuments] = useState([
+    { name: 'Commercial Invoice', uploaded: true, required: true },
+    { name: 'Packing List', uploaded: true, required: true },
+    { name: 'Certificate of Origin', uploaded: false, required: true },
+    { name: 'MSDS (if applicable)', uploaded: false, required: false },
+    { name: 'Product Images', uploaded: true, required: false }
+  ]);
 
-  // Handle file selection and upload for a document
-  const handleFileSelect = (docIndex, e) => {
-    const file = e.target.files && e.target.files[0];
-    if (!file) return;
-
-    const docKey = documents[docIndex].key;
-    setUploadingDocKey(docKey);
-
-    // Simulate upload time and then persist uploaded metadata to the shipment
+  const handleFileUpload = (docIndex) => {
+    setUploading(true);
     setTimeout(() => {
       const updatedDocs = [...documents];
       updatedDocs[docIndex].uploaded = true;
-      updatedDocs[docIndex].fileName = file.name;
       setDocuments(updatedDocs);
-
-      // Persist uploaded document metadata into the shipment object
-      const shipmentFromStore = shipmentsStore.getShipmentById(currentShipment.id) || { ...currentShipment };
-      shipmentFromStore.uploadedDocuments = shipmentFromStore.uploadedDocuments || {};
-      shipmentFromStore.uploadedDocuments[docKey] = {
-        uploaded: true,
-        name: file.name,
-        uploadedAt: new Date().toISOString()
-      };
-
-      // Also mark the original documents object (if it was an object of flags) for backward compatibility
-      if (shipmentFromStore.documents && typeof shipmentFromStore.documents === 'object' && !Array.isArray(shipmentFromStore.documents)) {
-        shipmentFromStore.documents[docKey] = true;
-      }
-
-      shipmentsStore.saveShipment(shipmentFromStore);
-      const refreshed = shipmentsStore.getShipmentById(currentShipment.id) || shipmentFromStore;
-      setCurrentShipment(refreshed);
-      setUploadingDocKey(null);
+      
+      // Update the shipment store
+      const doc = updatedDocs[docIndex];
+      uploadDocument(currentShipment.id, doc.name, doc.required ? 'required' : 'optional');
+      
+      setUploading(false);
     }, 1500);
-  };
-
-  // Delete an uploaded document (remove metadata from shipment and UI)
-  const handleDeleteDocument = (docIndex) => {
-    const doc = documents[docIndex];
-    if (!doc) return;
-
-    // Update UI
-    const updatedDocs = [...documents];
-    updatedDocs[docIndex].uploaded = false;
-    updatedDocs[docIndex].fileName = '';
-    setDocuments(updatedDocs);
-
-    // Remove from store
-    const shipmentFromStore = shipmentsStore.getShipmentById(currentShipment.id) || { ...currentShipment };
-    shipmentFromStore.uploadedDocuments = shipmentFromStore.uploadedDocuments || {};
-    const docKey = doc.key;
-    if (shipmentFromStore.uploadedDocuments[docKey]) {
-      delete shipmentFromStore.uploadedDocuments[docKey];
-    }
-
-    // Keep documents flag for backward compatibility as false
-    if (shipmentFromStore.documents && typeof shipmentFromStore.documents === 'object') {
-      shipmentFromStore.documents[docKey] = false;
-    }
-
-    shipmentsStore.saveShipment(shipmentFromStore);
-    const refreshed = shipmentsStore.getShipmentById(currentShipment.id) || shipmentFromStore;
-    setCurrentShipment(refreshed);
   };
 
   const handleReRunAICheck = () => {
@@ -230,33 +170,15 @@ export function ShipmentDetails({ shipment, onNavigate }) {
     (currentShipment.brokerApproval === 'not-started' || !currentShipment.brokerApproval);
   const canGenerateToken = currentShipment.brokerApproval === 'approved';
 
-  // Keep documents in sync if shipment updates (e.g., after upload)
-  useEffect(() => {
-    const shipmentDocs = currentShipment?.documents || {};
-    const uploadedDocs = currentShipment?.uploadedDocuments || {};
-    const documentsList = [
-      { name: 'Commercial Invoice', key: 'commercialInvoice', uploaded: uploadedDocs.commercialInvoice?.uploaded || false, fileName: uploadedDocs.commercialInvoice?.name || '', required: true },
-      { name: 'Packing List', key: 'packingList', uploaded: uploadedDocs.packingList?.uploaded || false, fileName: uploadedDocs.packingList?.name || '', required: true },
-      { name: 'Certificate of Origin', key: 'certificateOfOrigin', uploaded: uploadedDocs.certificateOfOrigin?.uploaded || false, fileName: uploadedDocs.certificateOfOrigin?.name || '', required: false },
-      { name: 'Export License', key: 'exportLicense', uploaded: uploadedDocs.exportLicense?.uploaded || false, fileName: uploadedDocs.exportLicense?.name || '', required: false },
-      { name: 'Import License', key: 'importLicense', uploaded: uploadedDocs.importLicense?.uploaded || false, fileName: uploadedDocs.importLicense?.name || '', required: false },
-      { name: 'Safety Data Sheet (SDS)', key: 'sds', uploaded: uploadedDocs.sds?.uploaded || false, fileName: uploadedDocs.sds?.name || '', required: false },
-      { name: 'Airway Bill (AWB)', key: 'awb', uploaded: uploadedDocs.awb?.uploaded || false, fileName: uploadedDocs.awb?.name || '', required: false },
-      { name: 'Bill of Lading (BOL)', key: 'bol', uploaded: uploadedDocs.bol?.uploaded || false, fileName: uploadedDocs.bol?.name || '', required: false },
-      { name: 'CMR (International Road Transport)', key: 'cmr', uploaded: uploadedDocs.cmr?.uploaded || false, fileName: uploadedDocs.cmr?.name || '', required: false },
-    ];
-    setDocuments(documentsList.filter(d => shipmentDocs[d.key]));
-  }, [currentShipment]);
-
   return (
     <div>
       {/* Header */}
       <div className="mb-8">
         <button
-          onClick={() => onNavigate('shipment-form', currentShipment)}
+          onClick={() => onNavigate('dashboard')}
           className="text-blue-600 hover:text-blue-700 mb-4 flex items-center gap-2"
         >
-          ← Back to Shipment Form
+          ← Back to Dashboard
         </button>
         <div className="flex items-start justify-between">
           <div>
@@ -336,38 +258,38 @@ export function ShipmentDetails({ shipment, onNavigate }) {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-slate-500 text-sm mb-1">Product</p>
-                <p className="text-slate-900">{currentShipment.products?.[0]?.name || 'N/A'}</p>
+                <p className="text-slate-900">{currentShipment.productName}</p>
               </div>
               <div>
                 <p className="text-slate-500 text-sm mb-1">HS Code</p>
-                <p className="text-slate-900">{currentShipment.products?.[0]?.hsCode || 'N/A'}</p>
+                <p className="text-slate-900">{currentShipment.hsCode}</p>
               </div>
               <div>
                 <p className="text-slate-500 text-sm mb-1">Origin</p>
                 <div className="flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-blue-600" />
-                  <p className="text-slate-900">{currentShipment.shipper?.city || 'N/A'}, {currentShipment.shipper?.country || 'N/A'}</p>
+                  <p className="text-slate-900">{currentShipment.originCity}, {currentShipment.originCountry}</p>
                 </div>
               </div>
               <div>
                 <p className="text-slate-500 text-sm mb-1">Destination</p>
                 <div className="flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-purple-600" />
-                  <p className="text-slate-900">{currentShipment.consignee?.city || 'N/A'}, {currentShipment.consignee?.country || 'N/A'}</p>
+                  <p className="text-slate-900">{currentShipment.destCity}, {currentShipment.destCountry}</p>
                 </div>
               </div>
               <div>
                 <p className="text-slate-500 text-sm mb-1">Value</p>
                 <div className="flex items-center gap-2">
                   <DollarSign className="w-4 h-4 text-green-600" />
-                  <p className="text-slate-900">{currency.symbol}{currentShipment.products?.[0]?.totalValue || 0} {currency.code}</p>
+                  <p className="text-slate-900">{currency.symbol}{currentShipment.value} {currency.code}</p>
                 </div>
               </div>
               <div>
                 <p className="text-slate-500 text-sm mb-1">Weight</p>
                 <div className="flex items-center gap-2">
                   <Weight className="w-4 h-4 text-orange-600" />
-                  <p className="text-slate-900">{currentShipment.packages?.[0]?.weight || 0} kg</p>
+                  <p className="text-slate-900">{currentShipment.weight} kg</p>
                 </div>
               </div>
             </div>
@@ -424,54 +346,26 @@ export function ShipmentDetails({ shipment, onNavigate }) {
                         {doc.required && !doc.uploaded && (
                           <span className="ml-2 text-xs text-red-600">* Required</span>
                         )}
-                        {doc.uploaded && (
-                          <p className="text-xs text-slate-500 mt-1">Uploaded: {doc.fileName}</p>
-                        )}
                       </div>
                     </div>
-                    {/* Hidden file input (used for both upload and re-upload) */}
-                    <input
-                      id={`file-input-${doc.key}`}
-                      type="file"
-                      accept="application/pdf,image/*"
-                      className="hidden"
-                      onChange={(e) => handleFileSelect(index, e)}
-                    />
-
-                    {!doc.uploaded ? (
+                    {!doc.uploaded && (
                       <button
-                        onClick={() => document.getElementById(`file-input-${doc.key}`).click()}
-                        disabled={uploadingDocKey === doc.key}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm disabled:opacity-50 flex items-center gap-2"
+                        onClick={() => handleFileUpload(index)}
+                        disabled={uploading}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm disabled:opacity-50"
                       >
-                        {uploadingDocKey === doc.key ? (
+                        {uploading ? (
                           <>
-                            <Loader className="w-4 h-4 animate-spin" />
+                            <Loader className="w-4 h-4 inline mr-1 animate-spin" />
                             Uploading...
                           </>
                         ) : (
                           <>
-                            <Upload className="w-4 h-4" />
-                            Upload Document
+                            <Upload className="w-4 h-4 inline mr-1" />
+                            Upload
                           </>
                         )}
                       </button>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => document.getElementById(`file-input-${doc.key}`).click()}
-                          className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-                        >
-                          Re-upload
-                        </button>
-                        <button
-                          onClick={() => handleDeleteDocument(index)}
-                          className="p-2 text-red-600 rounded hover:bg-red-50 transition-colors"
-                          aria-label={`Delete ${doc.name}`}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
                     )}
                   </div>
                 </div>
@@ -528,73 +422,54 @@ export function ShipmentDetails({ shipment, onNavigate }) {
             )}
           </div>
 
-          {/* AI Evaluation Section - Improved Design */}
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200 p-8">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-blue-600 rounded-lg">
-                  <Zap className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-slate-900 font-bold text-lg">AI Compliance Evaluation</h2>
-                  <p className="text-slate-600 text-sm">Automated customs clearance analysis</p>
-                </div>
-              </div>
+          {/* AI Evaluation Section */}
+          <div className="bg-white rounded-xl border border-slate-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-slate-900 flex items-center gap-2">
+                <Zap className="w-5 h-5 text-blue-600" />
+                AI Evaluation Status
+              </h2>
               {currentShipment.aiApproval === 'approved' && (
-                <div className="px-4 py-2 bg-green-100 text-green-700 rounded-full text-sm font-bold flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4" />
-                  ✓ APPROVED
-                </div>
+                <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm flex items-center gap-1">
+                  <CheckCircle className="w-3 h-3" />
+                  AI Approved
+                </span>
               )}
             </div>
 
             {!allRequiredDocsUploaded && (
-              <div className="p-4 bg-amber-100 border border-amber-300 rounded-lg">
-                <p className="text-amber-900 text-sm font-medium">
-                  ⚠️ Upload all required documents to proceed with AI evaluation
+              <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                <p className="text-orange-900 text-sm">
+                  Please upload all required documents before requesting AI evaluation.
                 </p>
               </div>
             )}
 
             {allRequiredDocsUploaded && currentShipment.aiApproval !== 'approved' && !aiProcessing && (
-              <div className="space-y-4">
-                <p className="text-slate-700">
-                  Your documents are ready. Let our AI analyze compliance rules and regulations for your shipment.
+              <div>
+                <p className="text-slate-600 mb-4">
+                  Your documents are ready for AI evaluation. Click below to start the automated compliance check.
                 </p>
                 <button
                   onClick={handleRequestAIEvaluation}
-                  className="w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all transform hover:scale-105 font-bold flex items-center justify-center gap-2 shadow-lg"
+                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
                 >
                   <Zap className="w-5 h-5" />
-                  Start AI Evaluation
+                  Request AI Evaluation
                 </button>
               </div>
             )}
 
             {aiProcessing && (
-              <div className="p-6 bg-white rounded-lg border border-blue-200 text-center space-y-3">
-                <div className="flex justify-center">
-                  <div className="relative w-12 h-12">
-                    <div className="absolute inset-0 bg-blue-200 rounded-full animate-pulse"></div>
-                    <Loader className="w-12 h-12 text-blue-600 animate-spin relative" />
-                  </div>
-                </div>
-                <p className="text-blue-900 font-bold">AI Evaluation in Progress</p>
-                <p className="text-blue-700 text-sm">Analyzing documents against compliance rules...</p>
+              <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg text-center">
+                <Loader className="w-8 h-8 text-blue-600 mx-auto mb-3 animate-spin" />
+                <p className="text-blue-900 mb-1">AI Evaluation in Progress</p>
+                <p className="text-blue-700 text-sm">Analyzing documents and compliance rules...</p>
               </div>
             )}
 
             {currentShipment.aiApproval === 'approved' && (
-              <div className="space-y-4">
-                <div className="p-4 bg-white rounded-lg border-2 border-green-300">
-                  <p className="text-green-700 font-bold flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5" />
-                    ✓ All compliance checks passed
-                  </p>
-                  <p className="text-slate-600 text-sm mt-2">
-                    Your shipment meets all customs regulations and is approved for broker review.
-                  </p>
-                </div>
+              <div>
                 <ConstraintsValidationWidget 
                   shipment={currentShipment}
                   compact={true}
@@ -603,76 +478,98 @@ export function ShipmentDetails({ shipment, onNavigate }) {
             )}
           </div>
 
-          {/* Broker Approval Section - Only available after AI approval */}
-          {currentShipment.aiApproval === 'approved' && (
-            <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border-2 border-purple-200 p-8">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 bg-purple-600 rounded-lg">
-                    <UserCheck className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-slate-900 font-bold text-lg">Broker Review & Approval</h2>
-                    <p className="text-slate-600 text-sm">Get professional customs broker assistance</p>
-                  </div>
-                </div>
-                {currentShipment.brokerApproval === 'approved' && (
-                  <div className="px-4 py-2 bg-green-100 text-green-700 rounded-full text-sm font-bold flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4" />
-                    ✓ APPROVED
-                  </div>
-                )}
-                {currentShipment.brokerApproval === 'pending' && (
-                  <div className="px-4 py-2 bg-blue-100 text-blue-700 rounded-full text-sm font-bold flex items-center gap-2">
-                    <Clock className="w-4 h-4" />
-                    IN REVIEW
-                  </div>
-                )}
-              </div>
-
-              {canRequestBroker && !requestingBroker && (
-                <div className="space-y-4">
-                  <p className="text-slate-700">
-                    AI evaluation passed! Submit your shipment to a professional customs broker for final review and approval.
-                  </p>
-                  <button
-                    onClick={handleRequestBrokerApproval}
-                    className="w-full px-6 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all transform hover:scale-105 font-bold flex items-center justify-center gap-2 shadow-lg"
-                  >
-                    <UserCheck className="w-5 h-5" />
-                    Request Broker Review
-                  </button>
-                </div>
-              )}
-
-              {requestingBroker && (
-                <div className="p-6 bg-white rounded-lg border border-purple-200 text-center space-y-3">
-                  <div className="flex justify-center">
-                    <Loader className="w-8 h-8 text-purple-600 animate-spin" />
-                  </div>
-                  <p className="text-purple-900 font-bold">Sending to Broker</p>
-                  <p className="text-purple-700 text-sm">Your shipment is being assigned to a customs broker...</p>
-                </div>
-              )}
-
-              {currentShipment.brokerApproval === 'pending' && !requestingBroker && (
-                <div className="p-4 bg-white rounded-lg border-l-4 border-blue-500">
-                  <p className="text-blue-900 font-medium">📋 Under Review by Broker</p>
-                  <p className="text-blue-700 text-sm mt-2">A customs broker is reviewing your documentation. You'll be notified once review is complete.</p>
-                </div>
-              )}
-
+          {/* Broker Approval Section */}
+          <div className="bg-white rounded-xl border border-slate-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-slate-900 flex items-center gap-2">
+                <UserCheck className="w-5 h-5 text-purple-600" />
+                Broker Review & Approval
+              </h2>
               {currentShipment.brokerApproval === 'approved' && (
-                <div className="p-4 bg-green-100 rounded-lg border-2 border-green-400">
-                  <p className="text-green-700 font-bold flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5" />
-                    ✓ Broker Approved - Ready for Booking
-                  </p>
-                  <p className="text-green-700 text-sm mt-2">All approvals complete. You can now proceed with shipment booking.</p>
-                </div>
+                <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm flex items-center gap-1">
+                  <CheckCircle className="w-3 h-3" />
+                  Broker Approved
+                </span>
+              )}
+              {currentShipment.brokerApproval === 'pending' && (
+                <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  Under Review
+                </span>
+              )}
+              {currentShipment.brokerApproval === 'documents-requested' && (
+                <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3" />
+                  Docs Requested
+                </span>
               )}
             </div>
-          )}
+
+            {currentShipment.aiApproval !== 'approved' && (
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                <p className="text-slate-600 text-sm">
+                  AI approval required before requesting broker review.
+                </p>
+              </div>
+            )}
+
+            {canRequestBroker && !requestingBroker && (
+              <div>
+                <p className="text-slate-600 mb-4">
+                  AI evaluation complete! Request a customs broker to review your shipment documentation.
+                </p>
+                <button
+                  onClick={handleRequestBrokerApproval}
+                  className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2"
+                >
+                  <UserCheck className="w-5 h-5" />
+                  Request Broker Approval
+                </button>
+              </div>
+            )}
+
+            {requestingBroker && (
+              <div className="p-6 bg-purple-50 border border-purple-200 rounded-lg text-center">
+                <Loader className="w-8 h-8 text-purple-600 mx-auto mb-3 animate-spin" />
+                <p className="text-purple-900 mb-1">Sending to Broker</p>
+                <p className="text-purple-700 text-sm">Your shipment is being assigned to a customs broker...</p>
+              </div>
+            )}
+
+            {currentShipment.brokerApproval === 'pending' && !requestingBroker && (
+              <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <Clock className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />
+                  <div>
+                    <p className="text-blue-900 mb-2">Broker Review In Progress</p>
+                    <p className="text-blue-700 text-sm mb-3">
+                      A customs broker is currently reviewing your shipment documentation. You'll be notified once the review is complete.
+                    </p>
+                    <button
+                      onClick={() => setChatOpen(true)}
+                      className="text-sm text-blue-600 hover:text-blue-700 underline"
+                    >
+                      Message the broker →
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {currentShipment.brokerApproval === 'approved' && (
+              <div className="p-6 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0 mt-1" />
+                  <div>
+                    <p className="text-green-900 mb-2">Broker Approval Granted</p>
+                    <p className="text-green-700 text-sm">
+                      Your customs broker has approved this shipment. You can now generate your shipment token.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Token Generation Section */}
           {canGenerateToken && (

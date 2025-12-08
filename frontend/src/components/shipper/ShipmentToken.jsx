@@ -31,9 +31,9 @@ export function ShipmentToken({ shipment, onNavigate }) {
           <div className="bg-white rounded-xl p-8">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <p className="text-amber-700 text-sm mb-2 font-semibold">Pre-Clear Token</p>
+                <p className="text-slate-600 text-sm mb-2">UPS Pre-Clear Token</p>
                 <div className="flex items-center gap-3">
-                  <p className="text-amber-900 text-3xl font-mono font-bold">{token}</p>
+                  <p className="text-slate-900 text-3xl font-mono">{token}</p>
                   <button
                     onClick={handleCopyToken}
                     className="p-2 hover:bg-slate-100 rounded-lg transition-colors"

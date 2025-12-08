@@ -78,14 +78,14 @@ export function Settings({ userRole }: SettingsProps) {
     <div>
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-amber-900 mb-2 font-bold">Settings</h1>
-        <p className="text-amber-700">Manage your account and preferences</p>
+        <h1 className="text-slate-900 mb-2">Settings</h1>
+        <p className="text-slate-600">Manage your account and preferences</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Tabs Navigation */}
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-xl border border-amber-200 p-4">
+          <div className="bg-white rounded-xl border border-slate-200 p-4">
             <div className="space-y-1">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
@@ -95,8 +95,8 @@ export function Settings({ userRole }: SettingsProps) {
                     onClick={() => setActiveTab(tab.id)}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-left ${
                       activeTab === tab.id
-                        ? 'bg-yellow-100 text-amber-900 font-semibold'
-                        : 'text-amber-700 hover:bg-amber-50'
+                        ? 'bg-blue-50 text-blue-600'
+                        : 'text-slate-700 hover:bg-slate-50'
                     }`}
                   >
                     <Icon className="w-5 h-5" />
@@ -110,68 +110,68 @@ export function Settings({ userRole }: SettingsProps) {
 
         {/* Content Area */}
         <div className="lg:col-span-3">
-          <div className="bg-white rounded-xl border border-amber-200 p-6">
+          <div className="bg-white rounded-xl border border-slate-200 p-6">
             {/* User Profile */}
             {activeTab === 'profile' && (
               <div>
-                <h2 className="text-amber-900 mb-6 font-bold">User Profile</h2>
+                <h2 className="text-slate-900 mb-6">User Profile</h2>
                 <div className="space-y-4">
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="w-20 h-20 bg-amber-300 rounded-full flex items-center justify-center">
-                      <User className="w-10 h-10 text-white" />
+                    <div className="w-20 h-20 bg-slate-300 rounded-full flex items-center justify-center">
+                      <User className="w-10 h-10 text-slate-600" />
                     </div>
-                    <button className="px-4 py-2 bg-yellow-400 text-amber-900 rounded-lg hover:bg-yellow-300 transition-colors font-semibold">
+                    <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                       Change Photo
                     </button>
                   </div>
 
                   <div>
-                    <label className="block text-amber-900 mb-2 font-semibold">Full Name</label>
+                    <label className="block text-slate-700 mb-2">Full Name</label>
                     <input
                       type="text"
                       value={profileData.fullName}
                       onChange={(e) => setProfileData({...profileData, fullName: e.target.value})}
-                      className="w-full px-4 py-3 border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                      className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-amber-900 mb-2 font-semibold">Email</label>
+                    <label className="block text-slate-700 mb-2">Email</label>
                     <input
                       type="email"
                       value={profileData.email}
                       onChange={(e) => setProfileData({...profileData, email: e.target.value})}
-                      className="w-full px-4 py-3 border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                      className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-amber-900 mb-2 font-semibold">Phone</label>
+                    <label className="block text-slate-700 mb-2">Phone</label>
                     <input
                       type="tel"
                       value={profileData.phone}
                       onChange={(e) => setProfileData({...profileData, phone: e.target.value})}
-                      className="w-full px-4 py-3 border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                      className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-amber-900 mb-2 font-semibold">Company</label>
+                    <label className="block text-slate-700 mb-2">Company</label>
                     <input
                       type="text"
                       value={profileData.company}
                       onChange={(e) => setProfileData({...profileData, company: e.target.value})}
-                      className="w-full px-4 py-3 border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                      className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-amber-900 mb-2 font-semibold">Role</label>
+                    <label className="block text-slate-700 mb-2">Role</label>
                     <input
                       type="text"
                       value={profileData.role}
                       disabled
-                      className="w-full px-4 py-3 border border-amber-200 rounded-lg bg-amber-50 text-amber-600"
+                      className="w-full px-4 py-3 border border-slate-300 rounded-lg bg-slate-50 text-slate-500"
                     />
                   </div>
                 </div>
@@ -181,12 +181,12 @@ export function Settings({ userRole }: SettingsProps) {
             {/* HS Code Preferences */}
             {activeTab === 'hs-codes' && (
               <div>
-                <h2 className="text-amber-900 mb-6 font-bold">HS Code Preferences</h2>
+                <h2 className="text-slate-900 mb-6">HS Code Preferences</h2>
                 <div className="space-y-6">
-                  <div className="flex items-center justify-between p-4 bg-amber-50 rounded-lg">
+                  <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
                     <div>
-                      <p className="text-amber-900 mb-1 font-semibold">Auto-Suggest HS Codes</p>
-                      <p className="text-amber-700 text-sm">AI will automatically suggest HS codes based on product descriptions</p>
+                      <p className="text-slate-900 mb-1">Auto-Suggest HS Codes</p>
+                      <p className="text-slate-600 text-sm">AI will automatically suggest HS codes based on product descriptions</p>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input
@@ -195,12 +195,12 @@ export function Settings({ userRole }: SettingsProps) {
                         onChange={(e) => setHsPreferences({...hsPreferences, autoSuggest: e.target.checked})}
                         className="sr-only peer"
                       />
-                      <div className="w-11 h-6 bg-amber-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-yellow-400 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-amber-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-500"></div>
+                      <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                     </label>
                   </div>
 
                   <div>
-                    <label className="block text-amber-900 mb-2 font-semibold">Confidence Threshold (%)</label>
+                    <label className="block text-slate-700 mb-2">Confidence Threshold (%)</label>
                     <input
                       type="range"
                       min="50"
@@ -209,20 +209,20 @@ export function Settings({ userRole }: SettingsProps) {
                       onChange={(e) => setHsPreferences({...hsPreferences, confidenceThreshold: parseInt(e.target.value)})}
                       className="w-full"
                     />
-                    <div className="flex justify-between text-sm text-amber-700 mt-1">
+                    <div className="flex justify-between text-sm text-slate-600 mt-1">
                       <span>50%</span>
-                      <span className="text-yellow-600 font-semibold">{hsPreferences.confidenceThreshold}%</span>
+                      <span className="text-blue-600">{hsPreferences.confidenceThreshold}%</span>
                       <span>100%</span>
                     </div>
-                    <p className="text-amber-700 text-sm mt-2">
+                    <p className="text-slate-600 text-sm mt-2">
                       HS codes below this threshold will require manual review
                     </p>
                   </div>
 
-                  <div className="flex items-center justify-between p-4 bg-amber-50 rounded-lg">
+                  <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
                     <div>
-                      <p className="text-amber-900 mb-1 font-semibold">Always Require Manual Review</p>
-                      <p className="text-amber-700 text-sm">Manually verify all HS code suggestions</p>
+                      <p className="text-slate-900 mb-1">Always Require Manual Review</p>
+                      <p className="text-slate-600 text-sm">Manually verify all HS code suggestions</p>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input
@@ -231,7 +231,7 @@ export function Settings({ userRole }: SettingsProps) {
                         onChange={(e) => setHsPreferences({...hsPreferences, manualReview: e.target.checked})}
                         className="sr-only peer"
                       />
-                      <div className="w-11 h-6 bg-amber-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-yellow-400 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-amber-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-500"></div>
+                      <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                     </label>
                   </div>
                 </div>
@@ -242,28 +242,28 @@ export function Settings({ userRole }: SettingsProps) {
             {activeTab === 'documents' && (
               <div>
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-amber-900 font-bold">Document Templates</h2>
-                  <button className="px-4 py-2 bg-yellow-400 text-amber-900 rounded-lg hover:bg-yellow-300 transition-colors font-semibold">
+                  <h2 className="text-slate-900">Document Templates</h2>
+                  <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                     Add Template
                   </button>
                 </div>
                 <div className="space-y-3">
                   {documentTemplates.map((template) => (
-                    <div key={template.id} className="flex items-center justify-between p-4 border border-amber-200 rounded-lg">
+                    <div key={template.id} className="flex items-center justify-between p-4 border border-slate-200 rounded-lg">
                       <div className="flex items-center gap-3">
-                        <FileText className="w-5 h-5 text-amber-700" />
+                        <FileText className="w-5 h-5 text-slate-600" />
                         <div>
-                          <p className="text-amber-900 font-semibold">{template.name}</p>
-                          <p className="text-amber-700 text-sm">{template.type}</p>
+                          <p className="text-slate-900">{template.name}</p>
+                          <p className="text-slate-500 text-sm">{template.type}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                          template.active ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                        <span className={`px-3 py-1 rounded-full text-sm ${
+                          template.active ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'
                         }`}>
                           {template.active ? 'Active' : 'Inactive'}
                         </span>
-                        <button className="px-3 py-1 text-amber-600 hover:bg-amber-100 rounded-lg transition-colors font-semibold">
+                        <button className="px-3 py-1 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                           Edit
                         </button>
                       </div>
@@ -276,7 +276,7 @@ export function Settings({ userRole }: SettingsProps) {
             {/* Country Rules */}
             {activeTab === 'countries' && (
               <div>
-                <h2 className="text-amber-900 mb-6 font-bold">Country-Specific Rules</h2>
+                <h2 className="text-slate-900 mb-6">Country-Specific Rules</h2>
                 <div className="space-y-3">
                   {countryRules.map((rule, index) => (
                     <div key={index} className="flex items-center justify-between p-4 border border-slate-200 rounded-lg">
@@ -397,25 +397,25 @@ export function Settings({ userRole }: SettingsProps) {
                 <div className="space-y-4">
                   <div className="p-4 border border-slate-200 rounded-lg">
                     <h3 className="text-slate-900 mb-2">Change Password</h3>
-                    <button className="px-4 py-2 bg-yellow-400 text-amber-900 rounded-lg hover:bg-yellow-300 transition-colors font-semibold">
+                    <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                       Update Password
                     </button>
                   </div>
 
-                  <div className="p-4 border border-amber-200 rounded-lg">
+                  <div className="p-4 border border-slate-200 rounded-lg">
                     <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-amber-900 font-semibold">Two-Factor Authentication</h3>
-                      <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold">Enabled</span>
+                      <h3 className="text-slate-900">Two-Factor Authentication</h3>
+                      <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm">Enabled</span>
                     </div>
-                    <button className="px-4 py-2 border border-amber-300 text-amber-900 rounded-lg hover:bg-amber-50 transition-colors font-semibold">
+                    <button className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors">
                       Manage 2FA
                     </button>
                   </div>
 
-                  <div className="p-4 border border-amber-200 rounded-lg">
-                    <h3 className="text-amber-900 mb-2 font-semibold">Active Sessions</h3>
-                    <p className="text-amber-700 text-sm mb-3">2 active sessions</p>
-                    <button className="px-4 py-2 border border-amber-300 text-amber-900 rounded-lg hover:bg-amber-50 transition-colors font-semibold">
+                  <div className="p-4 border border-slate-200 rounded-lg">
+                    <h3 className="text-slate-900 mb-2">Active Sessions</h3>
+                    <p className="text-slate-600 text-sm mb-3">2 active sessions</p>
+                    <button className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors">
                       View All Sessions
                     </button>
                   </div>
@@ -424,10 +424,10 @@ export function Settings({ userRole }: SettingsProps) {
             )}
 
             {/* Save Button */}
-            <div className="mt-8 pt-6 border-t border-amber-200">
+            <div className="mt-8 pt-6 border-t border-slate-200">
               <button
                 onClick={handleSave}
-                className="px-8 py-3 bg-yellow-400 text-amber-900 rounded-xl hover:bg-yellow-300 transition-all shadow-lg hover:shadow-xl flex items-center gap-2 font-bold"
+                className="px-8 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
               >
                 <Save className="w-5 h-5" />
                 Save Changes

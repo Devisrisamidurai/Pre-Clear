@@ -227,7 +227,7 @@ export function PaymentPage({ shipment, onNavigate }) {
 
             <div className="pt-4 border-t border-slate-200">
               <p className="text-xs text-slate-500 leading-relaxed">
-                By proceeding with payment, you agree to Pre-Clear terms and conditions. Payment is processed securely.
+                By proceeding with payment, you agree to UPS Pre-Clear terms and conditions. Payment is processed securely.
               </p>
             </div>
           </div>

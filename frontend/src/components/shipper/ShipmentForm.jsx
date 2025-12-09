@@ -323,24 +323,31 @@ export function ShipmentForm({ shipment, onNavigate }) {
 
   const handleArrayChange = (arrayName, index, field, value) => {
     setFormData(prev => {
-      const newArray = [...prev[arrayName]];
-      newArray[index] = { ...newArray[index], [field]: value };
+      const existing = Array.isArray(prev[arrayName]) ? prev[arrayName] : [];
+      const newArray = [...existing];
+      newArray[index] = { ...(newArray[index] || {}), [field]: value };
       return { ...prev, [arrayName]: newArray };
     });
   };
 
   const addArrayItem = (arrayName, template) => {
-    setFormData(prev => ({
-      ...prev,
-      [arrayName]: [...prev[arrayName], template]
-    }));
+    setFormData(prev => {
+      const existing = Array.isArray(prev[arrayName]) ? prev[arrayName] : [];
+      return {
+        ...prev,
+        [arrayName]: [...existing, template]
+      };
+    });
   };
 
   const removeArrayItem = (arrayName, index) => {
-    setFormData(prev => ({
-      ...prev,
-      [arrayName]: prev[arrayName].filter((_, i) => i !== index)
-    }));
+    setFormData(prev => {
+      const existing = Array.isArray(prev[arrayName]) ? prev[arrayName] : [];
+      return {
+        ...prev,
+        [arrayName]: existing.filter((_, i) => i !== index)
+      };
+    });
   };
 
   // Calculate pricing

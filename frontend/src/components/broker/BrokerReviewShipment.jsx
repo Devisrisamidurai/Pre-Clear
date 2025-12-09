@@ -151,86 +151,79 @@ export function BrokerReviewShipment({ shipment: initialShipment = {}, onNavigat
         <p className="text-slate-600">Detailed compliance review and approval</p>
       </div>
 
-      {/* Shipper details and Quick Actions — parallel (side-by-side on md+) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 items-start">
-        {/* Shipper details card (left) */}
-        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-          <div className="text-left">
-            <h3 className="text-sm font-medium text-slate-900 mb-2">Shipper Details</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <p className="text-xs text-slate-500 mb-1">Shipper Name</p>
-                <p className="text-slate-900">{currentShipment.shipperName}</p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500 mb-1">Shipper ID</p>
-                <p className="text-slate-900">{currentShipment.shipperId}</p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500 mb-1">Origin Country</p>
-                <p className="text-slate-900">{currentShipment.originCountry}</p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500 mb-1">Origin City</p>
-                <p className="text-slate-900">{currentShipment.originCity}</p>
-              </div>
-              <div className="sm:col-span-2">
-                <p className="text-xs text-slate-500 mb-1">Origin Address</p>
-                <p className="text-slate-900 text-sm">{currentShipment.originAddress}</p>
-              </div>
-            </div>
-          </div>
+     {/* Shipper details and Quick Actions — parallel (side-by-side on md+) */}
+<div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 items-stretch">
+  {/* Shipper details card (left) */}
+  <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm h-full">
+    <div className="text-left h-full">
+      <h3 className="text-sm font-medium text-slate-900 mb-2">Shipper Details</h3>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <p className="text-xs text-slate-500 mb-1">Shipper Name</p>
+          <p className="text-slate-900">{currentShipment.shipperName}</p>
         </div>
-
-        {/* Quick Actions card (right) */}
-        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-          <h3 className="text-slate-900 mb-3">Quick Actions</h3>
-          <div className="flex flex-col gap-3">
-            <button
-              onClick={() => setShowApproveConfirm(true)}
-              className="w-full px-4 py-2 rounded-md text-white font-medium"
-              style={{ background: '#16A34A', border: '2px solid #12733A' }}
-            >
-              <div className="flex items-center justify-center gap-2">
-                <CheckCircle className="w-4 h-4" />
-                <span>Approve</span>
-              </div>
-            </button>
-
-            <button
-              onClick={() => setShowDocRequestModal(true)}
-              className="w-full px-4 py-2 rounded-md text-white font-medium"
-              style={{ background: '#2563EB', border: '2px solid #1E40AF' }}
-            >
-              <div className="flex items-center justify-center gap-2">
-                <Upload className="w-4 h-4" />
-                <span>Request Documents</span>
-              </div>
-            </button>
-
-            <button
-              onClick={() => setShowDenyModal(true)}
-              className="w-full px-4 py-2 rounded-md text-white font-medium"
-              style={{ background: '#EF4444', border: '2px solid #B91C1C' }}
-            >
-              <div className="flex items-center justify-center gap-2">
-                <XCircle className="w-4 h-4" />
-                <span>Deny</span>
-              </div>
-            </button>
-
-            <button
-              onClick={() => setChatOpen(true)}
-              className="w-full px-4 py-2 rounded-md text-[#2F1B17] font-medium border-2 border-[#2F1B17] bg-[#FBF9F6]"
-            >
-              <div className="flex items-center justify-center gap-2">
-                <MessageCircle className="w-4 h-4" />
-                <span>Message</span>
-              </div>
-            </button>
-          </div>
+        <div>
+          <p className="text-xs text-slate-500 mb-1">Shipper ID</p>
+          <p className="text-slate-900">{currentShipment.shipperId}</p>
+        </div>
+        <div>
+          <p className="text-xs text-slate-500 mb-1">Origin Country</p>
+          <p className="text-slate-900">{currentShipment.originCountry}</p>
+        </div>
+        <div>
+          <p className="text-xs text-slate-500 mb-1">Origin City</p>
+          <p className="text-slate-900">{currentShipment.originCity}</p>
+        </div>
+        <div className="sm:col-span-2">
+          <p className="text-xs text-slate-500 mb-1">Origin Address</p>
+          <p className="text-slate-900 text-sm">{currentShipment.originAddress}</p>
         </div>
       </div>
+    </div>
+  </div>
+
+  {/* Quick Actions card (right) */}
+  <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm h-full">
+    <h3 className="text-slate-900 mb-3">Quick Actions</h3>
+    <div className="flex flex-col gap-3">
+      <button
+        onClick={() => setShowApproveConfirm(true)}
+        className="w-full px-3 py-2 rounded-lg text-white font-medium flex items-center justify-center gap-2"
+        style={{ background: '#16A34A', border: '2px solid #12733A' }}
+      >
+        <CheckCircle className="w-4 h-4" />
+        <span className="text-sm">Approve</span>
+      </button>
+
+      <button
+        onClick={() => setShowDocRequestModal(true)}
+        className="w-full px-3 py-2 rounded-lg text-white font-medium flex items-center justify-center gap-2"
+        style={{ background: '#2563EB', border: '2px solid #1E40AF' }}
+      >
+        <Upload className="w-4 h-4" />
+        <span className="text-sm">Request Documents</span>
+      </button>
+
+      <button
+        onClick={() => setShowDenyModal(true)}
+        className="w-full px-3 py-2 rounded-lg text-white font-medium flex items-center justify-center gap-2"
+        style={{ background: '#EF4444', border: '2px solid #B91C1C' }}
+      >
+        <XCircle className="w-4 h-4" />
+        <span className="text-sm">Deny</span>
+      </button>
+
+      <button
+        onClick={() => setChatOpen(true)}
+        className="w-full px-3 py-2 rounded-lg text-[#2F1B17] font-medium border-2 border-[#2F1B17] bg-[#FBF9F6] flex items-center justify-center gap-2"
+      >
+        <MessageCircle className="w-4 h-4" />
+        <span className="text-sm">Message</span>
+      </button>
+    </div>
+  </div>
+</div>
+
 
       {/* Main content grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

@@ -38,7 +38,7 @@ export function ApprovedShipments({ onNavigate }) {
                     <p className="text-slate-600 text-sm">Submitted: {s.date}</p>
                   </div>
                   <button
-                    onClick={() => onNavigate('broker-review', { ...s, readOnly: true })}
+                    onClick={() => onNavigate('approved-shipview', s)}
                     className="px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
                     style={{ background: '#E6B800', color: '#2F1B17', border: '2px solid #2F1B17' }}
                   >

@@ -6,7 +6,7 @@ import { Layout } from "./components/Layout";
 
 // Shipper Pages
 import { ShipperDashboard } from "./components/shipper/ShipperDashboard";
-import { CreateShipment } from "./components/shipper/CreateShipment";
+// CreateShipment removed - use new ShipmentForm
 import { ShipmentDetails } from "./components/shipper/ShipmentDetails";
 import { UploadDocuments } from "./components/shipper/UploadDocuments";
 import { AIEvaluationStatus } from "./components/shipper/AIEvaluationStatus";
@@ -14,6 +14,8 @@ import { RequestBrokerApproval } from "./components/shipper/RequestBrokerApprova
 import { ChatNotifications } from "./components/shipper/ChatNotifications";
 import { ShipmentToken } from "./components/shipper/ShipmentToken";
 import { ShipmentTokenList } from "./components/shipper/ShipmentTokenList";
+import { ShipmentForm } from "./components/shipper/ShipmentForm";
+import { createDefaultShipment } from "./store/shipmentsStore";
 import { ShipmentBooking } from "./components/shipper/ShipmentBooking";
 import { PaymentPage } from "./components/shipper/PaymentPage";
 import { PaymentList } from "./components/shipper/PaymentList";
@@ -22,19 +24,19 @@ import { ShipperProfile } from "./components/shipper/ShipperProfile";
 // Broker Pages
 import { BrokerDashboard } from "./components/broker/BrokerDashboard";
 import { PendingReview } from "./components/broker/PendingReview";
+import { ApprovedShipments } from "./components/broker/ApprovedShipments";
 import { BrokerReviewShipment } from "./components/broker/BrokerReviewShipment";
 import { DocumentReview } from "./components/broker/DocumentReview";
 import { RequestDocuments } from "./components/broker/RequestDocuments";
 import { BrokerChat } from "./components/broker/BrokerChat";
 import { BrokerProfile } from "./components/broker/BrokerProfile";
-import { ApprovedShipments } from "./components/broker/ApprovedShipments";
+import ApprovedShipviewpg from "./components/broker/ApprovedShipviewpg";
 
 // Admin Pages
 import { AdminDashboard } from "./components/admin/AdminDashboard";
-import { AdminProfile } from "./components/admin/AdminProfile";
-
 import { UserManagement } from "./components/admin/UserManagement";
-// SystemConfig and AIRulesMonitoring removed from admin UI
+import { SystemConfig } from "./components/admin/SystemConfig";
+import { AIRulesMonitoring } from "./components/admin/AIRulesMonitoring";
 import { ApprovalLogs } from "./components/admin/ApprovalLogs";
 import { ShipmentTracking } from "./components/admin/ShipmentTracking";
 import { ImportExportRules } from "./components/admin/ImportExportRules";
@@ -71,9 +73,9 @@ export default function App() {
         return <ShipperDashboard onNavigate={handleNavigate} />;
       case "create-shipment":
         return (
-          <CreateShipment
+          <ShipmentForm
+            shipment={currentShipment || createDefaultShipment()}
             onNavigate={handleNavigate}
-            onSave={setCurrentShipment}
           />
         );
       case "shipment-details":
@@ -119,6 +121,13 @@ export default function App() {
         return (
           <ShipmentTokenList onNavigate={handleNavigate} />
         );
+      case "shipment-form":
+        return (
+          <ShipmentForm
+            shipment={currentShipment}
+            onNavigate={handleNavigate}
+          />
+        );
       case "booking":
         return (
           <ShipmentBooking
@@ -158,6 +167,13 @@ export default function App() {
             onNavigate={handleNavigate}
           />
         );
+      case "approved-shipview":
+        return (
+          <ApprovedShipviewpg
+            shipment={currentShipment}
+            onNavigate={handleNavigate}
+          />
+        );
       case "document-review":
         return (
           <DocumentReview
@@ -187,13 +203,14 @@ export default function App() {
         return <AdminDashboard onNavigate={handleNavigate} />;
       case "user-management":
         return <UserManagement />;
-      // system-config and ai-monitoring removed from admin UI
+      case "system-config":
+        return <SystemConfig />;
+      case "ai-monitoring":
+        return <AIRulesMonitoring />;
       case "approval-logs":
         return <ApprovalLogs />;
       case "tracking":
         return <ShipmentTracking />;
-      case "admin-profile":
-        return <AdminProfile />;
       case "import-export-rules":
         return <ImportExportRules />;
       default:
@@ -235,4 +252,3 @@ export default function App() {
     </Layout>
   );
 }
-

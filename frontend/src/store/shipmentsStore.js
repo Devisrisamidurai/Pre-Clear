@@ -616,35 +616,4 @@ class ShipmentsStore {
 // Export singleton instance
 export const shipmentsStore = new ShipmentsStore();
 
-// Helper function to create a default shipment
-export function createDefaultShipment() {
-  return {
-    id: 'SHP-' + Date.now(),
-    productName: '',
-    productDescription: '',
-    hsCode: '',
-    quantity: '',
-    weight: '',
-    value: '',
-    originCountry: '',
-    originCity: '',
-    originAddress: '',
-    destCountry: '',
-    destCity: '',
-    destAddress: '',
-    status: 'draft',
-    aiApproval: null,
-    aiScore: null,
-    aiEvaluatedAt: null,
-    brokerApproval: null,
-    brokerReviewedAt: null,
-    token: null,
-    tokenGeneratedAt: null,
-    documents: [],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    shipperId: null,
-    shipperName: ''
-  };
-}
 

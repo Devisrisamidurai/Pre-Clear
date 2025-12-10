@@ -33,7 +33,6 @@ export function Layout({ children, userRole, currentPage, onNavigate, onLogout }
     { id: 'shipment-token-list', label: 'Shipment Tokens', icon: Shield },
     { id: 'booking', label: 'Shipment Booking', icon: MapPin },
     { id: 'payment-list', label: 'Payments', icon: CreditCard },
-    { id: 'profile', label: 'Shipper Profile', icon: User },
   ];
 
   const brokerNav = [
@@ -75,7 +74,7 @@ export function Layout({ children, userRole, currentPage, onNavigate, onLogout }
   const navItems = getNavItems();
   const roleColor = getRoleColor();
 
-  const isFixedSidebar = isAdmin || userRole === 'broker';
+  const isFixedSidebar = isAdmin || userRole === 'broker' || userRole === 'shipper';
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   // Map role -> profile route (used when clicking the user card)
@@ -100,26 +99,26 @@ export function Layout({ children, userRole, currentPage, onNavigate, onLogout }
         className={`${isFixedSidebar ? 'fixed' : 'static'} w-72 flex flex-col transition-transform duration-300 ${
           isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
-        style={isFixedSidebar ? { top: 0, left: 0, height: '100vh', background: '#3A2B28', borderRight: '1px solid rgba(0,0,0,0.12)' } : undefined}
+        style={isFixedSidebar ? { top: 0, left: 0, height: '100vh', background: '#2F1B17', borderRight: '1px solid rgba(0,0,0,0.12)' } : undefined}
       >
         {/* Logo */}
-        <div className="p-6 border-b" style={isAdmin ? { borderColor: 'rgba(255,255,255,0.06)' } : undefined}>
+        <div className="p-6 border-b" style={isFixedSidebar ? { borderColor: 'rgba(255,255,255,0.06)' } : { borderColor: 'rgba(226,232,240,1)' }}>
           <div className="flex items-center gap-3 mb-2">
             <div className="w-12 h-12 bg-yellow-500 rounded-xl flex items-center justify-center shadow-lg">
               <Shield className="w-7 h-7 text-slate-900" />
             </div>
             <div>
-              <h1 className="text-xl" style={isFixedSidebar ? { color: '#FFF8EE' } : { color: '#0f172a' }}>Pre-Clear</h1>
-              <p className="text-xs" style={isFixedSidebar ? { color: '#EADFD8' } : { color: '#6b7280' }}>Customs Compliance</p>
+              <h1 className="text-xl" style={isFixedSidebar ? { color: '#FBF9F6' } : { color: '#0f172a' }}>Pre-Clear</h1>
+              <p className="text-xs" style={isFixedSidebar ? { color: '#D4AFA0' } : { color: '#6b7280' }}>Customs Compliance</p>
             </div>
           </div>
         </div>
 
         {/* Role Badge */}
-        <div className="px-6 py-4" style={isFixedSidebar ? { borderBottom: '1px solid rgba(255,255,255,0.06)' } : { borderBottom: '1px solid rgba(226,232,240,1)' }}>
+        <div className="px-6 py-4" style={isFixedSidebar ? { borderBottom: '1px solid rgba(255,255,255,0.04)' } : { borderBottom: '1px solid rgba(226,232,240,1)' }}>
           <div className={`px-4 py-2 rounded-lg`} style={isFixedSidebar ? { background: '#3a2b28', border: '1px solid rgba(255,255,255,0.04)' } : undefined}>
-            <p className="text-xs mb-1" style={isFixedSidebar ? { color: '#EADFD8' } : { color: '#64748b' }}>Signed in as</p>
-            <p style={isFixedSidebar ? { color: '#FFF8EE' } : undefined}>{getRoleName()}</p>
+            <p className="text-xs mb-1" style={isFixedSidebar ? { color: '#D4AFA0' } : { color: '#64748b' }}>Signed in as</p>
+            <p style={isFixedSidebar ? { color: '#FBF9F6' } : undefined}>{getRoleName()}</p>
           </div>
         </div>
 
@@ -136,10 +135,12 @@ export function Layout({ children, userRole, currentPage, onNavigate, onLogout }
                     onNavigate(item.id);
                     setIsMobileMenuOpen(false);
                   }}
-                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-md transition-all text-sm ${isActive ? 'active' : ''}`}
-                  style={isFixedSidebar ? (isActive ? { background: '#3a2b28', color: '#FFF8EE', border: '1px solid rgba(255,255,255,0.04)' } : { color: '#FFF8EE' }) : undefined}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-sm font-medium ${isActive ? 'active' : 'hover:bg-opacity-60'}`}
+                  style={isFixedSidebar ? (isActive ? { background: '#7A5B52', color: '#FBF9F6', border: '1px solid rgba(255,255,255,0.08)' } : { color: '#FBF9F6' }) : undefined}
+                  onMouseEnter={(e) => { if (isFixedSidebar && !isActive) e.currentTarget.style.backgroundColor = 'rgba(122, 91, 82, 0.4)'; }}
+                  onMouseLeave={(e) => { if (isFixedSidebar && !isActive) e.currentTarget.style.backgroundColor = 'transparent'; }}
                 >
-                  <Icon className="w-4 h-4 flex-shrink-0" style={isFixedSidebar ? { color: '#FFF8EE' } : undefined} />
+                  <Icon className="w-4 h-4 flex-shrink-0" style={isFixedSidebar ? { color: '#FBF9F6' } : undefined} />
                   <span className="truncate" style={isFixedSidebar ? { fontSize: '0.95rem' } : undefined}>{item.label}</span>
                 </button>
               );
@@ -149,21 +150,20 @@ export function Layout({ children, userRole, currentPage, onNavigate, onLogout }
 
         {/* User Profile - clicking card navigates to the appropriate profile page
             (admin -> 'admin-profile', broker/shipper -> 'profile') */}
-        <div className="p-4 border-t border-slate-200">
-          {/* For broker: show avatar + bell that toggles notifications; do not navigate to profile from sidebar */}
+        <div className="p-4 border-t border-slate-200" style={isFixedSidebar ? { borderColor: 'rgba(255,255,255,0.06)' } : undefined}>
           <div className="w-full mb-3">
             <div
               onClick={() => { onNavigate(profileRouteForRole()); setIsMobileMenuOpen(false); }}
               className="w-full flex items-center gap-3 p-3 rounded-lg cursor-pointer"
-              style={isFixedSidebar ? { background: 'transparent' } : { background: 'rgba(248,250,252,1)' }}
+              style={isFixedSidebar ? { background: 'rgba(122, 91, 82, 0.2)' } : { background: 'rgba(248,250,252,1)' }}
               aria-label="Open profile"
             >
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center`} style={isFixedSidebar ? { background: '#FFF8EE' } : undefined}>
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center`} style={isFixedSidebar ? { background: '#FBF9F6' } : undefined}>
                 <User className={`w-5 h-5`} style={isFixedSidebar ? { color: '#2F1B17' } : undefined} />
               </div>
               <div className="flex-1 text-left">
-                <p className="text-sm truncate" style={isFixedSidebar ? { color: '#FFF8EE' } : undefined}>Demo User</p>
-                <p className="text-xs truncate" style={isFixedSidebar ? { color: '#EADFD8' } : undefined}>{getRoleName()}</p>
+                <p className="text-sm truncate" style={isFixedSidebar ? { color: '#FBF9F6' } : undefined}>Demo User</p>
+                <p className="text-xs truncate" style={isFixedSidebar ? { color: '#D4AFA0' } : undefined}>{getRoleName()}</p>
               </div>
               <div>
                 {!isAdmin && (
@@ -171,9 +171,8 @@ export function Layout({ children, userRole, currentPage, onNavigate, onLogout }
                     aria-label="Notifications"
                     className="p-2 rounded"
                     onClick={(e) => { e.stopPropagation(); setNotificationsOpen(open => !open); }}
-                    /* NOTE: notification count removed — button only shows bell icon now */
                   >
-                    <Bell className="w-4 h-4 text-slate-200" />
+                    <Bell className="w-4 h-4" style={isFixedSidebar ? { color: '#FBF9F6' } : undefined} />
                   </button>
                 )}
               </div>
@@ -198,8 +197,8 @@ export function Layout({ children, userRole, currentPage, onNavigate, onLogout }
       )}
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto" style={isFixedSidebar ? { marginLeft: 288 } : undefined}>
-        <div className="p-6 lg:p-8">
+      <main className="flex-1 overflow-auto" style={isFixedSidebar ? { marginLeft: '288px' } : undefined}>
+        <div className="p-6 lg:p-8" style={userRole === 'shipper' ? { background: '#FBF9F6', minHeight: '100vh' } : undefined}>
           {children}
         </div>
       </main>

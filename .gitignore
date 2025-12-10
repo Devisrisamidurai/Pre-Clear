@@ -43,5 +43,16 @@ coverage/
 
 # TypeScript
 *.tsbuildinfo
+<<<<<<< HEAD
+<<<<<<< HEAD
+# .NET build artifacts
+backend/bin/
+backend/obj/
+=======
 
 /backend/obj/
+>>>>>>> 0439e845ff88249abc3f2b19bdf2f172ebafe499
+=======
+
+/backend/obj/
+>>>>>>> 0439e845ff88249abc3f2b19bdf2f172ebafe499

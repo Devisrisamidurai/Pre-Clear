@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { signUp } from '../api/auth';
 import { Shield, User, Briefcase, Settings, ArrowRight, ArrowLeft } from 'lucide-react';
 
 export function SignupPage({ onNavigate }) {
@@ -14,7 +15,7 @@ export function SignupPage({ onNavigate }) {
   });
   const [errors, setErrors] = useState({});
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     // Validation
@@ -57,9 +58,26 @@ export function SignupPage({ onNavigate }) {
       return;
     }
 
-    // Registration stub
-    alert('Account created successfully! Please sign in.');
-    onNavigate('login');
+    // Call API to register
+    try {
+      const payload = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password,
+        phone: formData.phone,
+        company: formData.company,
+        role: selectedRole,
+        tosAccepted: true
+      };
+
+      await signUp(payload);
+      alert('Account created successfully! Please sign in.');
+      onNavigate('login');
+    } catch (err) {
+      const msg = err?.response?.data?.error || err?.message || 'signup_failed';
+      alert('Signup failed: ' + msg);
+    }
   };
 
   const handleChange = (e) => {

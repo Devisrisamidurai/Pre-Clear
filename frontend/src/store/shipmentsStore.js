@@ -228,6 +228,30 @@ const mockImportExportRules = [
   }
 ];
 
+// Factory used by app to create a new shipment for forms
+export const createDefaultShipment = () => ({
+  id: `SHP-${Date.now()}`,
+  productName: '',
+  productDescription: '',
+  hsCode: '',
+  quantity: '',
+  weight: '',
+  value: 0,
+  originCountry: 'US',
+  originCity: '',
+  originAddress: '',
+  destCountry: '',
+  destCity: '',
+  destAddress: '',
+  status: 'draft',
+  aiApproval: 'not-started',
+  brokerApproval: 'not-started',
+  documents: [],
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+  shipperId: '',
+  shipperName: ''
+});
 // In-memory store (simulates a real-time database)
 class ShipmentsStore {
   constructor() {

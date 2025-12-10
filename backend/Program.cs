@@ -9,9 +9,15 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new() { Title = "PreClear API", Version = "v1" });
-    c.OperationFilter<FileUploadOperationFilter>();
+    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "PreClear API",
+        Version = "v1"
+    });
+
+    c.OperationFilter<FileUploadOperationFilter>(); // ✅ IMPORTANT
 });
+
 
 // application services
 builder.Services.AddScoped<PreClear.Api.Interfaces.IAuthService, PreClear.Api.Services.AuthService>();

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { signIn } from '../api/auth';
 import {
   Shield,
   User,
@@ -13,10 +14,24 @@ export function LoginPage({ onLogin, onNavigate }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (selectedRole) {
-      onLogin(selectedRole);
+    if (!selectedRole) {
+      alert('Please select a role');
+      return;
+    }
+
+    try {
+      const resp = await signIn({ email, password });
+      // store token
+      if (resp?.token) {
+        localStorage.setItem('pc_token', resp.token);
+      }
+      const role = resp?.role || selectedRole;
+      onLogin(role);
+    } catch (err) {
+      const msg = err?.response?.data?.error || err?.message || 'signin_failed';
+      alert('Sign in failed: ' + msg);
     }
   };
 

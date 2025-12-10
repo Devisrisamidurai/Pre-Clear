@@ -10,27 +10,36 @@ namespace PreClear.Api.Swagger
     {
         public void Apply(OpenApiOperation operation, OperationFilterContext context)
         {
+            // Detect IFormFile params or DTOs containing IFormFile
             var hasFileUpload = context.ApiDescription.ParameterDescriptions
-                .Any(p => p.Type == typeof(IFormFile) || p.ModelMetadata?.ModelType == typeof(IFormFile)
-                           || (p.ModelMetadata?.ModelType != null && p.ModelMetadata.ModelType.GetProperties().Any(prop => prop.PropertyType == typeof(IFormFile))));
+                .Any(p =>
+                    p.Type == typeof(IFormFile) ||
+                    (p.ModelMetadata?.ModelType != null &&
+                     p.ModelMetadata.ModelType.GetProperties()
+                        .Any(prop => prop.PropertyType == typeof(IFormFile)))
+                );
 
-            if (!hasFileUpload) return;
+            if (!hasFileUpload)
+                return;
 
+            // Force Swagger to treat request as multipart/form-data
             operation.RequestBody = new OpenApiRequestBody
             {
-                Content =
+                Required = true,
+                Content = new Dictionary<string, OpenApiMediaType>
                 {
                     ["multipart/form-data"] = new OpenApiMediaType
                     {
                         Schema = new OpenApiSchema
                         {
                             Type = "object",
-                            Properties =
+                            Properties = new Dictionary<string, OpenApiSchema>
                             {
                                 ["file"] = new OpenApiSchema
                                 {
                                     Type = "string",
-                                    Format = "binary"
+                                    Format = "binary",
+                                    Description = "Upload file"
                                 }
                             },
                             Required = new HashSet<string> { "file" }

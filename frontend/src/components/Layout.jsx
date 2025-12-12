@@ -32,7 +32,8 @@ export function Layout({ children, userRole, currentPage, onNavigate, onLogout }
     { id: 'create-shipment', label: 'Create Shipment', icon: PackagePlus },
     { id: 'shipment-token-list', label: 'Shipment Tokens', icon: Shield },
     { id: 'booking', label: 'Shipment Booking', icon: MapPin },
-    { id: 'payment-list', label: 'Payments', icon: CreditCard },
+    // { id: 'payment-list', label: 'Payments', icon: CreditCard },
+    { id: 'booked-paid', label: 'Booked & Paid', icon: CheckCircle },
   ];
 
   const brokerNav = [
@@ -45,7 +46,6 @@ export function Layout({ children, userRole, currentPage, onNavigate, onLogout }
   const adminNav = [
     { id: 'dashboard', label: 'Admin Dashboard', icon: LayoutDashboard },
     { id: 'user-management', label: 'User Management', icon: Users },
-    { id: 'import-export-rules', label: 'Import/Export Rules', icon: Shield },
     { id: 'approval-logs', label: 'Approval Logs', icon: FileSearch },
     { id: 'tracking', label: 'Shipment Tracking', icon: MapPin },
   ];
@@ -77,6 +77,9 @@ export function Layout({ children, userRole, currentPage, onNavigate, onLogout }
   const isFixedSidebar = isAdmin || userRole === 'broker' || userRole === 'shipper';
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
+  // Unified sidebar color: keep same for shipper, broker and admin
+  const SIDEBAR_BG = '#2F1B17';
+
   // Map role -> profile route (used when clicking the user card)
   const profileRouteForRole = () => {
     if (userRole === 'admin') return 'admin-profile';
@@ -99,7 +102,7 @@ export function Layout({ children, userRole, currentPage, onNavigate, onLogout }
         className={`${isFixedSidebar ? 'fixed' : 'static'} w-72 flex flex-col transition-transform duration-300 ${
           isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
-        style={isFixedSidebar ? { top: 0, left: 0, height: '100vh', background: '#2F1B17', borderRight: '1px solid rgba(0,0,0,0.12)' } : undefined}
+        style={isFixedSidebar ? { top: 0, left: 0, height: '100vh', background: SIDEBAR_BG, borderRight: '1px solid rgba(0,0,0,0.12)' } : undefined}
       >
         {/* Logo */}
         <div className="p-6 border-b" style={isFixedSidebar ? { borderColor: 'rgba(255,255,255,0.06)' } : { borderColor: 'rgba(226,232,240,1)' }}>

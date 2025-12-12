@@ -3,13 +3,14 @@ import { NotificationPanel } from '../NotificationPanel';
 import { shipmentsStore, createDefaultShipment } from '../../store/shipmentsStore';
 import { useState } from 'react';
 import { useShipments } from '../../hooks/useShipments';
-import { getCurrencyByCountry } from '../../utils/validation';
+import { getCurrencyByCountry, formatCurrency } from '../../utils/validation';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 
 
 export function ShipperDashboard({ onNavigate }) {
   const { shipments: allShipments } = useShipments();
   const [filterStatus, setFilterStatus] = useState('all');
+  const [viewingDocuments, setViewingDocuments] = useState(null);
   
   // Categorize shipments
   const pendingReview = allShipments.filter(s => 
@@ -109,32 +110,52 @@ export function ShipperDashboard({ onNavigate }) {
   };
 
   const getActionButton = (shipment) => {
-    if (shipment.status === 'cancelled') {
-      return null;
-    }
+    if (shipment.status === 'cancelled') return null;
+
+    const hasUploadedDocuments = shipment.uploadedDocuments && Object.keys(shipment.uploadedDocuments).length > 0;
+
+    // Draft / Documents requested: show View + Upload/Uploaded
     if (shipment.status === 'draft' || shipment.status === 'document-requested') {
       return (
         <div className="flex gap-2">
           <button
-            onClick={() => onNavigate('shipment-form', shipment)}
-            className="px-3 py-1.5 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors text-sm flex items-center gap-1"
-            title="Edit shipment details"
+            onClick={() => {
+              const latest = allShipments.find(s => s.id === shipment.id) || shipment;
+              onNavigate('shipment-details', latest);
+            }}
+            className="px-3 py-1.5 bg-yellow-500 text-yellow-900 rounded-lg hover:bg-yellow-600 hover:shadow-md transition-all text-sm flex items-center gap-1"
+            title="View shipment details"
           >
-            <Edit className="w-3.5 h-3.5" />
-            Edit
+            <Eye className="w-3.5 h-3.5" />
+            View
           </button>
-          {shipment.status === 'document-requested' && (
+
+          {shipment.status === 'document-requested' && (shipment.brokerApproval === 'documents-requested' || !hasUploadedDocuments) && (
             <button
-              onClick={() => onNavigate('upload-documents', shipment)}
+              onClick={() => onNavigate('chat', shipment, { showRequiredDocuments: true })}
               className="px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm flex items-center gap-1"
+              title="Open chat to upload required documents"
             >
               <Upload className="w-3.5 h-3.5" />
               Upload
             </button>
           )}
+
+          {shipment.status === 'document-requested' && hasUploadedDocuments && shipment.brokerApproval !== 'documents-requested' && (
+            <button
+              disabled
+              className="px-3 py-1.5 bg-slate-200 text-slate-500 rounded-lg transition-colors text-sm flex items-center gap-1 cursor-not-allowed"
+              title="Documents uploaded"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              Uploaded
+            </button>
+          )}
         </div>
       );
     }
+
+    // If payment pending
     if (shipment.token && !shipment.paymentStatus) {
       return (
         <button
@@ -146,15 +167,22 @@ export function ShipperDashboard({ onNavigate }) {
         </button>
       );
     }
+
+    // Default: just View details
     return (
-      <button
-        onClick={() => onNavigate('shipment-details', shipment)}
-        className="px-3 py-1.5 bg-yellow-500 text-yellow-900 rounded-lg hover:bg-yellow-600 hover:shadow-md transition-all text-sm flex items-center gap-1"
-        title="View shipment details"
-      >
-        <Eye className="w-3.5 h-3.5" />
-        View
-      </button>
+      <div className="flex gap-2">
+        <button
+          onClick={() => {
+            const latest = allShipments.find(s => s.id === shipment.id) || shipment;
+            onNavigate('shipment-details', latest);
+          }}
+          className="px-3 py-1.5 bg-yellow-500 text-yellow-900 rounded-lg hover:bg-yellow-600 hover:shadow-md transition-all text-sm flex items-center gap-1"
+          title="View shipment details"
+        >
+          <Eye className="w-3.5 h-3.5" />
+          View
+        </button>
+      </div>
     );
   };
 
@@ -170,24 +198,25 @@ export function ShipperDashboard({ onNavigate }) {
     }
 
     return (
-      <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
+      <div className="bg-white rounded-lg overflow-hidden" style={{ border: '2px solid #3A2B28' }}>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="bg-slate-50">
-                <th className="text-slate-900 p-4 text-left font-semibold text-sm">Shipment ID</th>
-                <th className="text-slate-900 p-4 text-left font-semibold text-sm">Product</th>
-                <th className="text-slate-900 p-4 text-left font-semibold text-sm">Origin → Destination</th>
-                <th className="text-slate-900 p-4 text-left font-semibold text-sm">Value</th>
-                <th className="text-slate-900 p-4 text-left font-semibold text-sm">AI Score</th>
-                <th className="text-slate-900 p-4 text-left font-semibold text-sm">Status</th>
-                <th className="text-slate-900 p-4 text-left font-semibold text-sm">Date Created</th>
-                <th className="text-slate-900 p-4 text-right font-semibold text-sm">Actions</th>
+              <tr style={{ background: '#D4AFA0' }}>
+                <th className="p-4 text-left font-semibold text-sm" style={{ color: '#2F1B17', width: '10%' }}>Shipment ID</th>
+                <th className="p-4 text-left font-semibold text-sm" style={{ color: '#2F1B17', width: '12%' }}>Title</th>
+                <th className="p-4 text-left font-semibold text-sm" style={{ color: '#2F1B17', width: '14%' }}>Origin → Destination</th>
+                <th className="p-4 text-left font-semibold text-sm" style={{ color: '#2F1B17', width: '11%' }}>Value</th>
+                <th className="p-4 text-left font-semibold text-sm" style={{ color: '#2F1B17', width: '11%' }}>AI Score</th>
+                <th className="p-4 text-left font-semibold text-sm" style={{ color: '#2F1B17', width: '13%' }}>Status</th>
+                <th className="p-4 text-left font-semibold text-sm" style={{ color: '#2F1B17', width: '12%' }}>Date Created</th>
+                <th className="p-4 text-right font-semibold text-sm" style={{ color: '#2F1B17', width: '17%' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {shipments.map((shipment, index) => {
-                const currency = getCurrencyByCountry(shipment.originCountry || 'US');
+                {shipments.map((shipment, index) => {
+                // prefer explicit shipment.currency, otherwise infer from shipper country
+                const currency = shipment.currency ? { symbol: (getCurrencyByCountry(shipment.currency) || {}).symbol || '$', code: shipment.currency } : getCurrencyByCountry(shipment.shipper?.country || 'US');
                 const aiScore = shipment.aiScore || 0;
                 const isEvenRow = index % 2 === 0;
 
@@ -195,13 +224,13 @@ export function ShipperDashboard({ onNavigate }) {
                   <tr key={shipment.id} className={`${isEvenRow ? 'bg-white' : 'bg-slate-50'} hover:bg-slate-100` }>
                     <td className="p-4 text-slate-900 font-semibold text-sm">#{shipment.id}</td>
                     <td className="p-4 text-slate-900 text-sm">
-                      <div className="max-w-[150px] truncate">{shipment.productName}</div>
+                      <div className="max-w-[150px] truncate">{shipment.title || shipment.productName}</div>
                     </td>
                     <td className="p-4 text-slate-900 text-sm">
-                      <div className="text-sm"><strong>{shipment.originCountry || 'N/A'}</strong> → <strong>{shipment.destCountry || 'N/A'}</strong></div>
-                      <div className="text-xs text-slate-500 mt-1">{shipment.destCity || 'Unknown'}</div>
+                      <div className="text-sm"><strong>{shipment.shipper?.city || shipment.shipper?.company || 'N/A'}</strong> → <strong>{shipment.consignee?.city || shipment.consignee?.company || 'N/A'}</strong></div>
+                      <div className="text-xs text-slate-500 mt-1">{(shipment.mode || 'N/A')} • {shipment.shipmentType || 'N/A'}</div>
                     </td>
-                    <td className="p-4 text-slate-900 font-medium text-sm">{currency.symbol}{shipment.value} {currency.code}</td>
+                    <td className="p-4 text-slate-900 font-medium text-sm">{formatCurrency(shipment.value || 0, shipment.currency || currency.code)}</td>
                     <td className="p-4">
                       {aiScore > 0 ? (
                         <div className="flex items-center gap-2">
@@ -221,13 +250,7 @@ export function ShipperDashboard({ onNavigate }) {
                     <td className="p-4 text-slate-600 text-sm">{new Date(shipment.createdAt).toLocaleDateString()}</td>
                     <td className="p-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => onNavigate('chat', shipment)}
-                          title="Open chat for this shipment"
-                          className="p-2 rounded-md hover:bg-slate-100"
-                        >
-                          <MessageSquare className="w-5 h-5 text-slate-600" />
-                        </button>
+                        
                         {getActionButton(shipment)}
                       </div>
                     </td>
@@ -242,7 +265,7 @@ export function ShipperDashboard({ onNavigate }) {
   };
 
   return (
-    <div className="bg-white">
+    <div className="bg-cream-50 min-h-screen p-8">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-yellow-900 text-3xl font-bold mb-2">Shipper Dashboard</h1>
@@ -252,27 +275,6 @@ export function ShipperDashboard({ onNavigate }) {
       {/* Real-time Notifications */}
       <div className="mb-6">
         <NotificationPanel role="shipper" onNavigate={onNavigate} />
-      </div>
-
-      {/* Quick Actions - Create Shipment Button */}
-      <div className="mb-8">
-        <button
-          onClick={() => {
-            const newShipment = createDefaultShipment();
-            onNavigate('shipment-form', newShipment);
-          }}
-          className="w-full p-6 text-white rounded-xl hover:shadow-2xl transition-all group bg-gradient-to-r from-blue-600 to-blue-700"
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform" style={{ background: 'rgba(255,255,255,0.2)' }}>
-              <PackagePlus className="w-7 h-7" />
-            </div>
-            <div className="text-left">
-              <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '4px' }}>Create New Shipment</h3>
-              <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: '14px' }}>Start pre-clearance process with AI-powered compliance check</p>
-            </div>
-          </div>
-        </button>
       </div>
 
       {/* Stats Cards */}
@@ -312,10 +314,7 @@ export function ShipperDashboard({ onNavigate }) {
 
       {/* Filter Controls */}
       <div className="mb-6 flex items-center gap-3 flex-wrap">
-        <div className="flex items-center gap-2 text-slate-600">
-          <Filter className="w-5 h-5" />
-          <span className="text-sm font-medium">Filter:</span>
-        </div>
+      
         {[
           { label: 'All Shipments', value: 'all' },
           { label: 'Pending Review', value: 'pending' },
@@ -348,6 +347,79 @@ export function ShipperDashboard({ onNavigate }) {
         </h2>
         <UnifiedShipmentTable shipments={filteredShipments} />
       </div>
+
+      {/* Documents Viewer Modal */}
+      {viewingDocuments && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-2xl w-full p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-slate-900 text-lg font-semibold">Documents - Shipment #{viewingDocuments.id}</h3>
+              <button onClick={() => setViewingDocuments(null)} className="text-slate-500 hover:text-slate-700">✕</button>
+            </div>
+
+            <div className="space-y-4 max-h-96 overflow-y-auto">
+              {/* Form Documents */}
+              {viewingDocuments.uploadedDocuments && Object.values(viewingDocuments.uploadedDocuments).filter(d => d.source === 'form').length > 0 && (
+                <div>
+                  <h4 className="font-semibold text-slate-900 mb-2 text-sm">Documents from Form</h4>
+                  <div className="space-y-2">
+                    {Object.entries(viewingDocuments.uploadedDocuments)
+                      .filter(([_, doc]) => doc.source === 'form')
+                      .map(([key, doc]) => (
+                        <div key={key} className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <FileText className="w-4 h-4 text-green-600" />
+                            <div>
+                              <p className="text-sm text-slate-900">{doc.name || key}</p>
+                              {doc.fileName && <p className="text-xs text-slate-500">File: {doc.fileName}</p>}
+                            </div>
+                          </div>
+                          <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">Form</span>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Chat Documents */}
+              {viewingDocuments.uploadedDocuments && Object.values(viewingDocuments.uploadedDocuments).filter(d => !d.source || d.source !== 'form').length > 0 && (
+                <div>
+                  <h4 className="font-semibold text-slate-900 mb-2 text-sm">Documents from Chat</h4>
+                  <div className="space-y-2">
+                    {Object.entries(viewingDocuments.uploadedDocuments)
+                      .filter(([_, doc]) => !doc.source || doc.source !== 'form')
+                      .map(([key, doc]) => (
+                        <div key={key} className="flex items-center justify-between p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <FileText className="w-4 h-4 text-purple-600" />
+                            <div>
+                              <p className="text-sm text-slate-900">{doc.name || key}</p>
+                              {doc.uploadedAt && <p className="text-xs text-slate-500">Uploaded: {new Date(doc.uploadedAt).toLocaleDateString()}</p>}
+                            </div>
+                          </div>
+                          <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full">Chat</span>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {!viewingDocuments.uploadedDocuments || Object.keys(viewingDocuments.uploadedDocuments).length === 0 && (
+                <p className="text-slate-600 text-center py-8">No documents uploaded yet</p>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => setViewingDocuments(null)}
+                className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

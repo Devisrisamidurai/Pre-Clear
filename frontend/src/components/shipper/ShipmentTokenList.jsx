@@ -39,6 +39,15 @@ export function ShipmentTokenList({ onNavigate }) {
     });
   };
 
+  const formatCurrency = (amount, currency = 'USD') => {
+    const num = parseFloat(amount) || 0;
+    try {
+      return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(num);
+    } catch (e) {
+      return `${num.toLocaleString()} ${currency}`;
+    }
+  };
+
   return (
     <div>
       {/* Header */}
@@ -116,11 +125,21 @@ export function ShipmentTokenList({ onNavigate }) {
                     <strong>ID:</strong> {shipment.id}
                   </p>
                   <p className="text-slate-600 text-sm mb-1">
-                    <strong>Route:</strong> {shipment.originCountry} → {shipment.destCountry}
+                    <strong>Route:</strong> {shipment.shipper?.city || 'N/A'}, {shipment.shipper?.country || 'N/A'} → {shipment.consignee?.city || 'N/A'}, {shipment.consignee?.country || 'N/A'}
                   </p>
-                  <p className="text-slate-600 text-sm">
-                    <strong>Value:</strong> ${parseFloat(shipment.value).toLocaleString()}
+                  <p className="text-slate-600 text-sm mb-1">
+                    <strong>Weight:</strong> {shipment.weight || 'N/A'} kg
                   </p>
+                  <p className="text-slate-600 text-sm mb-1">
+                    <strong>Value:</strong> {formatCurrency(shipment.value || 0, shipment.currency)}
+                  </p>
+                  <div className="mt-2 text-sm text-slate-600">
+                    <p><strong>Shipper:</strong> {shipment.shipper?.company || shipment.shipperName || 'N/A'}</p>
+                    <p><strong>Consignee:</strong> {shipment.consignee?.company || 'N/A'}</p>
+                    {shipment.packages && shipment.packages.length > 0 && (
+                      <p><strong>Packages:</strong> {shipment.packages.length} ({shipment.packages.map((p,i)=> p.type? p.type : `Pkg ${i+1}`).join(', ')})</p>
+                    )}
+                  </div>
                 </div>
 
                 {/* Right: Dates and Actions */}

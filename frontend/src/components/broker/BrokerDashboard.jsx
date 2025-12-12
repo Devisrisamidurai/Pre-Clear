@@ -76,35 +76,43 @@ export function BrokerDashboard({ onNavigate }) {
     }
 
     return (
-      <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
+      <div className="bg-white rounded-lg overflow-hidden" style={{ border: '2px solid #3A2B28' }}>
         <Table>
           <TableHeader>
-            <TableRow className="bg-slate-50">
-              <TableHead>Shipment ID</TableHead>
-              <TableHead>Product</TableHead>
-              <TableHead>HS Code</TableHead>
-              <TableHead>Shipper</TableHead>
-              <TableHead>Origin</TableHead>
-              <TableHead>Value</TableHead>
-              <TableHead>AI Score</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+            <TableRow style={{ background: '#D4AFA0' }}>
+              <TableHead style={{ width: '10%', color: '#2F1B17', fontWeight: '600' }}>Shipment ID</TableHead>
+              <TableHead style={{ width: '12%', color: '#2F1B17', fontWeight: '600' }}>Title</TableHead>
+              <TableHead style={{ width: '14%', color: '#2F1B17', fontWeight: '600' }}>Route</TableHead>
+              <TableHead style={{ width: '12%', color: '#2F1B17', fontWeight: '600' }}>Shipper</TableHead>
+              <TableHead style={{ width: '12%', color: '#2F1B17', fontWeight: '600' }}>Value</TableHead>
+              <TableHead style={{ width: '12%', color: '#2F1B17', fontWeight: '600' }}>AI Score</TableHead>
+              <TableHead style={{ width: '12%', color: '#2F1B17', fontWeight: '600' }}>Status</TableHead>
+              <TableHead style={{ width: '10%', textAlign: 'right', color: '#2F1B17', fontWeight: '600' }}>Actions</TableHead>
             </TableRow>
           </TableHeader>
 
           <TableBody>
             {shipmentsList.map((shipment) => {
-              const currency = getCurrencyByCountry(shipment.originCountry || 'US');
               const aiScore = shipment.aiScore || 0;
+              const currencyCode = shipment.currency || 'USD';
+              const currencySymbol = { 
+                USD: '$', 
+                EUR: '€', 
+                GBP: '£', 
+                JPY: '¥', 
+                CAD: 'C$', 
+                INR: '₹',
+                CNY: '¥',
+                AUD: 'A$'
+              }[currencyCode] || currencyCode;
 
               return (
                 <TableRow key={shipment.id} className="hover:bg-slate-50">
                   <TableCell><span className="text-slate-900">#{shipment.id}</span></TableCell>
-                  <TableCell><span className="text-slate-900">{shipment.productName}</span></TableCell>
-                  <TableCell><span className="text-slate-600 text-sm">{shipment.hsCode}</span></TableCell>
-                  <TableCell><span className="text-slate-900">{shipment.shipperName}</span></TableCell>
-                  <TableCell><span className="text-slate-900">{shipment.originCountry}</span></TableCell>
-                  <TableCell><span className="text-slate-900">{currency.symbol}{shipment.value} {currency.code}</span></TableCell>
+                  <TableCell><span className="text-slate-900">{shipment.title || shipment.productName}</span></TableCell>
+                  <TableCell><span className="text-slate-900 text-sm">{shipment.shipper?.city || shipment.shipperName || 'N/A'}, {shipment.shipper?.country || ''} → {shipment.consignee?.city || 'N/A'}, {shipment.consignee?.country || ''}</span></TableCell>
+                  <TableCell><span className="text-slate-900">{shipment.shipper?.company || shipment.shipperName || 'N/A'}</span></TableCell>
+                  <TableCell><span className="text-slate-900">{currencySymbol}{parseFloat(shipment.value).toLocaleString()} {currencyCode}</span></TableCell>
 
                   <TableCell>
                     {aiScore > 0 ? (

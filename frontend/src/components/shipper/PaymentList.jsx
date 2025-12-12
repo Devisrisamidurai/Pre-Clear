@@ -95,9 +95,11 @@ export function PaymentList({ onNavigate }) {
       ) : (
         <div className="space-y-4">
           {shipments.map((shipment) => {
-            const totalUSD = calculateAmount(shipment);
-            const destCurrency = currencyRates[shipment.destCountry] || currencyRates['US'];
-            const totalDestCurrency = totalUSD * destCurrency.rate;
+            const pricing = shipment.pricing;
+            const totalUSD = pricing ? parseFloat(pricing.total || 0) : calculateAmount(shipment);
+            const destCountryCode = shipment.consignee?.country || shipment.destCountry || 'US';
+            const destCurrency = currencyRates[destCountryCode] || currencyRates['US'];
+            const totalDestCurrency = totalUSD * (destCurrency.rate || 1);
             
             return (
               <div
@@ -125,7 +127,7 @@ export function PaymentList({ onNavigate }) {
                         </div>
                         <div className="text-slate-600 text-xs">
                           <p>Token: <span className="font-mono text-green-700">{shipment.token}</span></p>
-                          <p>Route: {shipment.originCountry} → {shipment.destCountry}</p>
+                          <p>Route: {shipment.shipper?.city || shipment.shipperName || 'N/A'}, {shipment.shipper?.country || ''} → {shipment.consignee?.city || 'N/A'}, {shipment.consignee?.country || ''}</p>
                         </div>
                       </div>
                     </div>

@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { 
   Package, 
-  MapPin, 
   Calendar, 
   DollarSign, 
   Upload, 
@@ -18,21 +17,30 @@ import {
   Loader,
   TrendingUp,
   Box,
-  Weight,
   RefreshCw,
   Send,
   Trash2
 } from 'lucide-react';
 import { useShipments } from '../../hooks/useShipments';
-import { ConstraintsValidationWidget } from '../ConstraintsValidationWidget';
 import { ShipmentChatPanel } from '../ShipmentChatPanel';
 import { shipmentsStore } from '../../store/shipmentsStore';
-import { getCurrencyByCountry } from '../../utils/validation';
+import { getCurrencyByCountry, formatCurrency } from '../../utils/validation';
+
+// Helper function to format time to 12-hour format with AM/PM
+const formatTimeWithAmPm = (timeString) => {
+  if (!timeString) return 'N/A';
+  const [hours, minutes] = timeString.split(':');
+  const hour = parseInt(hours);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const displayHour = hour % 12 || 12;
+  return `${displayHour}:${minutes} ${ampm}`;
+};
 
 export function ShipmentDetails({ shipment, onNavigate }) {
   const { updateShipmentStatus, updateAIApproval, requestBrokerApproval, uploadDocument } = useShipments();
   const [currentShipment, setCurrentShipment] = useState(shipment);
   const [chatOpen, setChatOpen] = useState(false);
+  const [viewingDocument, setViewingDocument] = useState(null);
   const [uploadingDocKey, setUploadingDocKey] = useState(null);
   const [aiProcessing, setAiProcessing] = useState(false);
   const [requestingBroker, setRequestingBroker] = useState(false);
@@ -224,6 +232,13 @@ export function ShipmentDetails({ shipment, onNavigate }) {
     onNavigate('dashboard');
   };
 
+  const handleViewDocument = (docName) => {
+    setViewingDocument({
+      name: docName,
+      message: `Viewing document: ${docName}`
+    });
+  };
+
   const allRequiredDocsUploaded = documents.filter(d => d.required).every(d => d.uploaded);
   const canRequestAI = allRequiredDocsUploaded && currentShipment.aiApproval !== 'approved';
   const canRequestBroker = currentShipment.aiApproval === 'approved' && 
@@ -252,12 +267,6 @@ export function ShipmentDetails({ shipment, onNavigate }) {
     <div>
       {/* Header */}
       <div className="mb-8">
-        <button
-          onClick={() => onNavigate('shipment-form', currentShipment)}
-          className="text-blue-600 hover:text-blue-700 mb-4 flex items-center gap-2"
-        >
-          ← Back to Shipment Form
-        </button>
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-slate-900 mb-2">Shipment Details</h1>
@@ -330,46 +339,209 @@ export function ShipmentDetails({ shipment, onNavigate }) {
         {/* Left Column - Main Workflow */}
         <div className="lg:col-span-2 space-y-6">
           
-          {/* Shipment Information */}
+          {/* Comprehensive Shipment Details */}
           <div className="bg-white rounded-xl border border-slate-200 p-6">
-            <h2 className="text-slate-900 mb-4">Shipment Information</h2>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-slate-500 text-sm mb-1">Product</p>
-                <p className="text-slate-900">{currentShipment.products?.[0]?.name || 'N/A'}</p>
-              </div>
-              <div>
-                <p className="text-slate-500 text-sm mb-1">HS Code</p>
-                <p className="text-slate-900">{currentShipment.products?.[0]?.hsCode || 'N/A'}</p>
-              </div>
-              <div>
-                <p className="text-slate-500 text-sm mb-1">Origin</p>
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-blue-600" />
-                  <p className="text-slate-900">{currentShipment.shipper?.city || 'N/A'}, {currentShipment.shipper?.country || 'N/A'}</p>
+            <h2 className="text-slate-900 mb-6">Shipment Details</h2>
+            
+            {/* Basics Section */}
+            <div className="mb-8 pb-6 border-b border-slate-200">
+              <h3 className="text-slate-900 font-semibold mb-4">Shipment Basics</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-slate-500 text-sm mb-1">Title</p>
+                  <p className="text-slate-900">{currentShipment.title || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-slate-500 text-sm mb-1">Mode</p>
+                  <p className="text-slate-900">{currentShipment.mode || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-slate-500 text-sm mb-1">Shipment Type</p>
+                  <p className="text-slate-900">{currentShipment.shipmentType || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-slate-500 text-sm mb-1">Service Level</p>
+                  <p className="text-slate-900">{currentShipment.serviceLevel || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-slate-500 text-sm mb-1">Currency</p>
+                  <p className="text-slate-900">{currentShipment.currency || currency.code}</p>
+                </div>
+
+                <div>
+                  <p className="text-slate-500 text-sm mb-1">Pickup</p>
+                  <p className="text-slate-900">{currentShipment.pickupType || 'N/A'}</p>
+                  {currentShipment.pickupType === 'Drop-off' && currentShipment.estimatedDropoffDate && (
+                    <p className="text-xs text-slate-500 mt-1">Estimated Drop-off: {new Date(currentShipment.estimatedDropoffDate).toLocaleDateString()}</p>
+                  )}
+                  {currentShipment.pickupType === 'Scheduled Pickup' && (
+                    <div className="text-xs text-slate-500 mt-1">
+                      {currentShipment.pickupLocation && <div>Location: {currentShipment.pickupLocation}</div>}
+                      {currentShipment.pickupDate && <div>Pickup Date: {new Date(currentShipment.pickupDate).toLocaleDateString()}</div>}
+                      {(currentShipment.pickupTimeEarliest || currentShipment.pickupTimeLatest) && (
+                        <div>Time: {formatTimeWithAmPm(currentShipment.pickupTimeEarliest)} — {formatTimeWithAmPm(currentShipment.pickupTimeLatest)}</div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
-              <div>
-                <p className="text-slate-500 text-sm mb-1">Destination</p>
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-purple-600" />
-                  <p className="text-slate-900">{currentShipment.consignee?.city || 'N/A'}, {currentShipment.consignee?.country || 'N/A'}</p>
+            </div>
+
+            {/* Shipper Section */}
+            <div className="mb-8 pb-6 border-b border-slate-200">
+              <h3 className="text-slate-900 font-semibold mb-4">Shipper Information</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-slate-500 text-sm mb-1">Company</p>
+                  <p className="text-slate-900">{currentShipment.shipper?.company || 'N/A'}</p>
                 </div>
-              </div>
-              <div>
-                <p className="text-slate-500 text-sm mb-1">Value</p>
-                <div className="flex items-center gap-2">
-                  <DollarSign className="w-4 h-4 text-green-600" />
-                  <p className="text-slate-900">{currency.symbol}{currentShipment.products?.[0]?.totalValue || 0} {currency.code}</p>
+                <div>
+                  <p className="text-slate-500 text-sm mb-1">Contact Name</p>
+                  <p className="text-slate-900">{currentShipment.shipper?.contactName || 'N/A'}</p>
                 </div>
-              </div>
-              <div>
-                <p className="text-slate-500 text-sm mb-1">Weight</p>
-                <div className="flex items-center gap-2">
-                  <Weight className="w-4 h-4 text-orange-600" />
-                  <p className="text-slate-900">{currentShipment.packages?.[0]?.weight || 0} kg</p>
+                <div>
+                  <p className="text-slate-500 text-sm mb-1">Email</p>
+                  <p className="text-slate-900">{currentShipment.shipper?.email || 'N/A'}</p>
                 </div>
+                <div>
+                  <p className="text-slate-500 text-sm mb-1">Phone</p>
+                  <p className="text-slate-900">{currentShipment.shipper?.phone || 'N/A'}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-slate-500 text-sm mb-1">Address</p>
+                  <p className="text-slate-900">
+                    {currentShipment.shipper?.address1}{currentShipment.shipper?.address2 ? ` ${currentShipment.shipper.address2}` : ''}, {currentShipment.shipper?.city}, {currentShipment.shipper?.state} {currentShipment.shipper?.postalCode}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-slate-500 text-sm mb-1">Country</p>
+                  <p className="text-slate-900">{currentShipment.shipper?.country || 'N/A'}</p>
+                </div>
+                
               </div>
+            </div>
+
+            {/* Consignee Section */}
+            <div className="mb-8 pb-6 border-b border-slate-200">
+              <h3 className="text-slate-900 font-semibold mb-4">Consignee Information</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-slate-500 text-sm mb-1">Company</p>
+                  <p className="text-slate-900">{currentShipment.consignee?.company || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-slate-500 text-sm mb-1">Contact Name</p>
+                  <p className="text-slate-900">{currentShipment.consignee?.contactName || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-slate-500 text-sm mb-1">Email</p>
+                  <p className="text-slate-900">{currentShipment.consignee?.email || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-slate-500 text-sm mb-1">Phone</p>
+                  <p className="text-slate-900">{currentShipment.consignee?.phone || 'N/A'}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-slate-500 text-sm mb-1">Address</p>
+                  <p className="text-slate-900">
+                    {currentShipment.consignee?.address1}{currentShipment.consignee?.address2 ? ` ${currentShipment.consignee.address2}` : ''}, {currentShipment.consignee?.city}, {currentShipment.consignee?.state} {currentShipment.consignee?.postalCode}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-slate-500 text-sm mb-1">Country</p>
+                  <p className="text-slate-900">{currentShipment.consignee?.country || 'N/A'}</p>
+                </div>
+                
+              </div>
+            </div>
+
+            {/* Packages & Products Section */}
+            <div className="mb-8 pb-6 border-b border-slate-200">
+              <h3 className="text-slate-900 font-semibold mb-4">Packages & Products</h3>
+              {currentShipment.packages && currentShipment.packages.length > 0 ? (
+                <div className="space-y-6">
+                  {currentShipment.packages.map((pkg, pkgIdx) => (
+                    <div key={pkgIdx} className="border border-slate-200 rounded-lg p-4 bg-slate-50">
+                      <h4 className="text-slate-900 font-medium mb-4">Package {pkgIdx + 1}</h4>
+                      <div className="grid grid-cols-2 gap-4 mb-4 pb-4 border-b border-slate-200">
+                        <div>
+                          <p className="text-slate-500 text-sm mb-1">Type</p>
+                          <p className="text-slate-900">{pkg.type || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <p className="text-slate-500 text-sm mb-1">Dimensions</p>
+                          <p className="text-slate-900">{pkg.length} x {pkg.width} x {pkg.height} {pkg.dimUnit || 'cm'}</p>
+                        </div>
+                        <div>
+                          <p className="text-slate-500 text-sm mb-1">Weight</p>
+                          <p className="text-slate-900">{pkg.weight} {pkg.weightUnit || 'kg'}</p>
+                        </div>
+                        <div>
+                          <p className="text-slate-500 text-sm mb-1">Stackable</p>
+                          <p className="text-slate-900">{pkg.stackable ? 'Yes' : 'No'}</p>
+                        </div>
+                      </div>
+                      
+                      {/* Products in Package */}
+                      {pkg.products && pkg.products.length > 0 && (
+                        <div>
+                          <h5 className="text-slate-900 font-medium text-sm mb-3">Products</h5>
+                          <div className="space-y-3">
+                            {pkg.products.map((product, prodIdx) => (
+                              <div key={prodIdx} className="bg-white p-3 rounded border border-slate-200">
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div>
+                                    <p className="text-slate-500 text-xs mb-1">Name</p>
+                                    <p className="text-slate-900 text-sm">{product.name || 'N/A'}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-slate-500 text-xs mb-1">HS Code</p>
+                                    <p className="text-slate-900 text-sm">{product.hsCode || 'N/A'}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-slate-500 text-xs mb-1">Category</p>
+                                    <p className="text-slate-900 text-sm">{product.category || 'N/A'}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-slate-500 text-xs mb-1">UOM</p>
+                                    <p className="text-slate-900 text-sm">{product.uom || 'N/A'}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-slate-500 text-xs mb-1">Quantity</p>
+                                    <p className="text-slate-900 text-sm">{product.qty || 'N/A'}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-slate-500 text-xs mb-1">Unit Price</p>
+                                    <p className="text-slate-900 text-sm">{product.unitPrice || 'N/A'}</p>
+                                  </div>
+                                  <div className="col-span-2">
+                                    <p className="text-slate-500 text-xs mb-1">Total Value</p>
+                                    <p className="text-slate-900 text-sm">{formatCurrency(product.totalValue || 0, currentShipment.currency || currency.code)}</p>
+                                  </div>
+                                  <div className="col-span-2">
+                                    <p className="text-slate-500 text-xs mb-1">Description</p>
+                                    <p className="text-slate-900 text-sm">{product.description || 'N/A'}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-slate-500 text-xs mb-1">Origin Country</p>
+                                    <p className="text-slate-900 text-sm">{product.originCountry || 'N/A'}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-slate-500 text-xs mb-1">Reason for Export</p>
+                                    <p className="text-slate-900 text-sm">{product.reasonForExport || 'N/A'}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-slate-600">No packages available</p>
+              )}
             </div>
           </div>
 
@@ -459,6 +631,12 @@ export function ShipmentDetails({ shipment, onNavigate }) {
                     ) : (
                       <div className="flex items-center gap-2">
                         <button
+                          onClick={() => setViewingDocument({ name: doc.fileName || doc.name || doc.key, key: doc.key, shipmentId: currentShipment.id, source: 'form' })}
+                          className="px-3 py-2 bg-slate-50 text-slate-700 rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors text-sm"
+                        >
+                          View
+                        </button>
+                        <button
                           onClick={() => document.getElementById(`file-input-${doc.key}`).click()}
                           className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
                         >
@@ -476,56 +654,93 @@ export function ShipmentDetails({ shipment, onNavigate }) {
                   </div>
                 </div>
               ))}
+
+              {/* Chat & Form Uploaded Documents Section */}
+              {currentShipment.uploadedDocuments && Object.keys(currentShipment.uploadedDocuments).length > 0 && (
+                <div className="mt-6 pt-6 border-t border-slate-200">
+                  {/* Separate form documents from chat documents */}
+                  {(() => {
+                    const formDocs = Object.entries(currentShipment.uploadedDocuments).filter(([_, doc]) => doc.source === 'form');
+                    const chatDocs = Object.entries(currentShipment.uploadedDocuments).filter(([_, doc]) => !doc.source || doc.source !== 'form');
+                    
+                    return (
+                      <>
+                        {/* Form Uploaded Documents */}
+                        {formDocs.length > 0 && (
+                          <div className="mb-6">
+                            <h3 className="text-slate-900 font-semibold mb-4">Documents from Shipment Form</h3>
+                            <div className="space-y-3">
+                              {formDocs.map(([key, doc]) => (
+                                <div key={key} className="p-4 rounded-lg border-2 bg-green-50 border-green-200">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                      <CheckCircle className="w-5 h-5 text-green-600" />
+                                      <div>
+                                        <span className="text-slate-900">{doc.name || key}</span>
+                                        {doc.fileName && (
+                                          <p className="text-xs text-slate-500 mt-1">File: {doc.fileName}</p>
+                                        )}
+                                        {doc.uploadedAt && (
+                                          <p className="text-xs text-slate-500 mt-1">Uploaded: {new Date(doc.uploadedAt).toLocaleDateString()} {new Date(doc.uploadedAt).toLocaleTimeString()}</p>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <button
+                                        onClick={() => handleViewDocument(doc.name || key)}
+                                        className="px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 transition-colors"
+                                      >
+                                        View
+                                      </button>
+                                      <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">Form</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Chat Uploaded Documents */}
+                        {chatDocs.length > 0 && (
+                          <div>
+                            <h3 className="text-slate-900 font-semibold mb-4">Documents from Chat</h3>
+                            <div className="space-y-3">
+                              {chatDocs.map(([key, doc]) => (
+                                <div key={key} className="p-4 rounded-lg border-2 bg-purple-50 border-purple-200">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                      <CheckCircle className="w-5 h-5 text-purple-600" />
+                                      <div>
+                                        <span className="text-slate-900">{doc.name || key}</span>
+                                        {doc.uploadedAt && (
+                                          <p className="text-xs text-slate-500 mt-1">Uploaded: {new Date(doc.uploadedAt).toLocaleDateString()} {new Date(doc.uploadedAt).toLocaleTimeString()}</p>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <button
+                                        onClick={() => handleViewDocument(doc.name || key)}
+                                        className="px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 transition-colors"
+                                      >
+                                        View
+                                      </button>
+                                      <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full">Chat</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
+              )}
             </div>
             
-            {/* Upload Required Documents Section - Shows after broker requests */}
-            {currentShipment.brokerApproval === 'documents-requested' && allRequiredDocsUploaded && (
-              <div className="mt-6 p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
-                <h3 className="text-blue-900 mb-3">Documents Uploaded - Next Steps</h3>
-                <p className="text-blue-800 text-sm mb-4">
-                  All requested documents have been uploaded. Choose an action:
-                </p>
-                <div className="flex gap-3">
-                  <button
-                    onClick={handleReRunAICheck}
-                    disabled={aiProcessing}
-                    className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                  >
-                    {aiProcessing ? (
-                      <>
-                        <Loader className="w-4 h-4 animate-spin" />
-                        Processing...
-                      </>
-                    ) : (
-                      <>
-                        <RefreshCw className="w-4 h-4" />
-                        Run AI Check Again
-                      </>
-                    )}
-                  </button>
-                  <button
-                    onClick={handleSendBackToBroker}
-                    disabled={resubmittingToBroker}
-                    className="flex-1 px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                  >
-                    {resubmittingToBroker ? (
-                      <>
-                        <Loader className="w-4 h-4 animate-spin" />
-                        Sending...
-                      </>
-                    ) : (
-                      <>
-                        <Send className="w-4 h-4" />
-                        Send to Broker
-                      </>
-                    )}
-                  </button>
-                </div>
-                <p className="text-blue-700 text-xs mt-3">
-                  ℹ️ Running AI Check will re-validate compliance. Sending to Broker will submit for manual review.
-                </p>
-              </div>
-            )}
+            
           </div>
 
           {/* AI Evaluation Section - Improved Design */}
@@ -595,10 +810,7 @@ export function ShipmentDetails({ shipment, onNavigate }) {
                     Your shipment meets all customs regulations and is approved for broker review.
                   </p>
                 </div>
-                <ConstraintsValidationWidget 
-                  shipment={currentShipment}
-                  compact={true}
-                />
+                {/* ConstraintsValidationWidget removed as per UI requirements */}
               </div>
             )}
           </div>
@@ -712,14 +924,7 @@ export function ShipmentDetails({ shipment, onNavigate }) {
                       className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
                     >
                       <Box className="w-5 h-5" />
-                      Book Shipment
-                    </button>
-                    <button
-                      onClick={() => onNavigate('payment', currentShipment)}
-                      className="flex-1 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center gap-2"
-                    >
-                      <DollarSign className="w-5 h-5" />
-                      Make Payment
+                      Book & Pay
                     </button>
                   </div>
                 </div>
@@ -884,6 +1089,27 @@ export function ShipmentDetails({ shipment, onNavigate }) {
         userRole="shipper"
         userName="ABC Exports"
       />
+
+      {/* Document Viewer Modal */}
+      {viewingDocument && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-2xl w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-slate-900 text-lg font-semibold">{viewingDocument.name}</h3>
+              <button onClick={() => setViewingDocument(null)} className="text-slate-500 hover:text-slate-700 text-2xl">✕</button>
+            </div>
+            <div className="p-4 bg-slate-50 rounded-lg text-center">
+              <p className="text-slate-600">{viewingDocument.message || `Document: ${viewingDocument.name}`}</p>
+              <p className="text-slate-500 text-sm mt-2">In production, the file would be displayed here (PDF viewer, image preview, etc.)</p>
+            </div>
+            <div className="mt-4 flex justify-end">
+              <button onClick={() => setViewingDocument(null)} className="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Cancel Confirmation Modal */}
       {showCancelConfirm && (

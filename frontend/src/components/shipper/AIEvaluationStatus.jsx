@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Zap, CheckCircle, XCircle, AlertTriangle, Loader, ArrowRight, FileText, Globe, Package, Scale, DollarSign, Shield, Ban } from 'lucide-react';
 import { useShipments } from '../../hooks/useShipments';
-import { ConstraintsValidationWidget } from '../ConstraintsValidationWidget';
+import { getCurrencyByCountry, formatCurrency } from '../../utils/validation';
 
 export function AIEvaluationStatus({ shipment, onNavigate }) {
   const { updateAIApproval, importExportRules } = useShipments();
@@ -220,15 +220,15 @@ export function AIEvaluationStatus({ shipment, onNavigate }) {
           </div>
           <div>
             <p className="text-slate-600 text-sm mb-1">Product</p>
-            <p className="text-slate-900">{shipment?.productName}</p>
+            <p className="text-slate-900">{shipment?.title || shipment?.productName}</p>
           </div>
           <div>
             <p className="text-slate-600 text-sm mb-1">Route</p>
-            <p className="text-slate-900">{shipment?.originCountry} → {shipment?.destCountry}</p>
+            <p className="text-slate-900">{shipment?.shipper?.country || shipment?.originCountry} → {shipment?.consignee?.country || shipment?.destCountry}</p>
           </div>
           <div>
             <p className="text-slate-600 text-sm mb-1">Value</p>
-            <p className="text-slate-900">${parseFloat(shipment?.value).toLocaleString()}</p>
+            <p className="text-slate-900">{formatCurrency(shipment?.value || 0, shipment.currency || getCurrencyByCountry(shipment.shipper?.country || shipment.destCountry || 'US').code)}</p>
           </div>
         </div>
       </div>

@@ -1,26 +1,111 @@
 import { CreditCard, CheckCircle, DollarSign, TrendingUp, Package, FileText, Shield, Truck } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { shipmentsStore } from '../../store/shipmentsStore';
-import { getCurrencyByCountry } from '../../utils/validation';
+import { getCurrencyByCountry, formatCurrency } from '../../utils/validation';
+
+// Customs clearance configuration by destination country
+const CLEARANCE_CONFIG = {
+  'IN': { base: 50, threshold: 10000, formalFee: 2000, extraLineItemFee: 100, specialCommodityFee: 1500 },
+  'US': { base: 0, threshold: 800, formalFee: 35, extraLineItemFee: 5, specialCommodityFee: 25 },
+  'GB': { base: 20, threshold: 150, formalFee: 40, extraLineItemFee: 5, specialCommodityFee: 30 },
+  'FR': { base: 20, threshold: 150, formalFee: 40, extraLineItemFee: 5, specialCommodityFee: 30 },
+  'DE': { base: 20, threshold: 150, formalFee: 40, extraLineItemFee: 5, specialCommodityFee: 30 },
+  'IT': { base: 20, threshold: 150, formalFee: 40, extraLineItemFee: 5, specialCommodityFee: 30 },
+  'ES': { base: 20, threshold: 150, formalFee: 40, extraLineItemFee: 5, specialCommodityFee: 30 },
+  'NL': { base: 20, threshold: 150, formalFee: 40, extraLineItemFee: 5, specialCommodityFee: 30 },
+  'BE': { base: 20, threshold: 150, formalFee: 40, extraLineItemFee: 5, specialCommodityFee: 30 },
+  'default': { base: 30, threshold: 100, formalFee: 50, extraLineItemFee: 5, specialCommodityFee: 30 }
+};
+
+// Pickup charge configuration by origin country
+const PICKUP_CONFIG = {
+  'IN': 250,
+  'US': 35,
+  'GB': 25,
+  'FR': 28,
+  'DE': 30,
+  'IT': 27,
+  'ES': 26,
+  'NL': 32,
+  'BE': 29,
+  'CN': 40,
+  'JP': 50,
+  'SG': 45,
+  'AU': 55,
+  'CA': 40,
+  'MX': 38,
+  'BR': 42,
+  'default': 50
+};
+
+// Helper function to calculate customs clearance
+const calculateClearance = (destCountry, customsValue, lineItemCount, isSpecialCommodity) => {
+  const country = destCountry?.toUpperCase() || '';
+  const config = CLEARANCE_CONFIG[country] || CLEARANCE_CONFIG['default'];
+  
+  let clearance = config.base;
+  
+  // Add formal clearance fee if customs value exceeds threshold
+  if (customsValue > config.threshold) {
+    clearance += config.formalFee;
+  }
+  
+  // Add extra line item fee if line items > 5
+  if (lineItemCount > 5) {
+    clearance += (lineItemCount - 5) * config.extraLineItemFee;
+  }
+  
+  // Add special commodity surcharge if applicable
+  if (isSpecialCommodity) {
+    clearance += config.specialCommodityFee;
+  }
+  
+  return Math.round(clearance);
+};
+
+// Helper function to calculate pickup charge
+const calculatePickupCharge = (originCountry) => {
+  const country = originCountry?.toUpperCase() || '';
+  return PICKUP_CONFIG[country] || PICKUP_CONFIG['default'];
+};
 
 export function PaymentPage({ shipment, onNavigate }) {
   const [processing, setProcessing] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
 
   // Get origin currency (all amounts shown in origin country currency)
-  const originCurrency = getCurrencyByCountry(shipment?.originCountry || 'US');
+  const originCurrency = getCurrencyByCountry(shipment?.shipper?.country || 'US');
 
-  // Calculate costs (base in origin currency)
+  // Prefer explicit pricing if present on the shipment (saved from form/mock data)
+  const pricing = shipment?.pricing || {};
   const shipmentValue = parseFloat(shipment?.value || '0');
   const weight = parseFloat(shipment?.weight || '0');
-  
-  const baseShippingCost = weight * 5; // Based on weight
-  const customsDuty = shipmentValue * 0.05; // 5% duty
-  const importTax = shipmentValue * 0.08; // 8% tax
-  const serviceCharge = 50; // Fixed service fee
-  const preClearFee = 35; // Pre-Clear processing fee
-  
-  const total = baseShippingCost + customsDuty + importTax + serviceCharge + preClearFee;
+  const customsValue = parseFloat(shipment?.customsValue || shipmentValue || '0');
+  const originCountry = shipment?.shipper?.country || shipment?.originCountry || 'US';
+  const destCountry = shipment?.consignee?.country || shipment?.destCountry || 'US';
+
+  // Count line items from packages
+  const lineItemCount = shipment?.packages?.reduce((acc, pkg) => acc + (pkg.products?.length || 0), 0) || 0;
+  const isSpecialCommodity = shipment?.packages?.some(pkg => pkg.products?.some(p => p.reasonForExport === 'Special')) || false;
+
+  // Calculate pricing using same formula as ShipmentForm
+  const serviceLevelMultiplier = {
+    'Standard': 1.0,
+    'Express': 1.5,
+    'Economy': 0.8,
+    'Freight': 0.7,
+  };
+
+  // Use shipment.pricing if available, otherwise calculate
+  const basePrice = parseFloat(pricing.basePrice || (customsValue * 0.05) || 0);
+  const serviceCharge = parseFloat(pricing.serviceCharge || (basePrice * (serviceLevelMultiplier[shipment?.serviceLevel] || 1.0)) || 0);
+  const calculatedCustomsClearance = calculateClearance(destCountry, customsValue, lineItemCount, isSpecialCommodity);
+  const customsClearance = parseFloat(pricing.customsClearance || calculatedCustomsClearance);
+  const calculatedPickupCharge = shipment?.pickupType === 'Scheduled Pickup' ? calculatePickupCharge(originCountry) : 0;
+  const pickupCharge = parseFloat(pricing.pickupCharge || calculatedPickupCharge);
+  const subtotal = parseFloat(pricing.subtotal || (basePrice + serviceCharge + customsClearance + pickupCharge) || 0);
+  const tax = parseFloat(pricing.tax || subtotal * 0.18 || 0);
+  const total = parseFloat(pricing.total || subtotal + tax || 0);
 
   const handlePayment = () => {
     setProcessing(true);
@@ -76,12 +161,12 @@ export function PaymentPage({ shipment, onNavigate }) {
                 <span className="text-slate-900">{shipment?.id}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-slate-100">
-                <span className="text-slate-600 text-sm">Product</span>
-                <span className="text-slate-900">{shipment?.productName}</span>
+                <span className="text-slate-600 text-sm">Title</span>
+                <span className="text-slate-900">{shipment?.title || shipment?.productName}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-slate-100">
                 <span className="text-slate-600 text-sm">Route</span>
-                <span className="text-slate-900">{shipment?.originCity}, {shipment?.originCountry} → {shipment?.destCity}, {shipment?.destCountry}</span>
+                <span className="text-slate-900">{shipment?.shipper?.city || shipment?.shipperName || 'N/A'}, {shipment?.shipper?.country || ''} → {shipment?.consignee?.city || 'N/A'}, {shipment?.consignee?.country || ''}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-slate-100">
                 <span className="text-slate-600 text-sm">Weight</span>
@@ -89,7 +174,7 @@ export function PaymentPage({ shipment, onNavigate }) {
               </div>
               <div className="flex justify-between py-2 border-b border-slate-100">
                 <span className="text-slate-600 text-sm">Declared Value</span>
-                <span className="text-slate-900">${parseFloat(shipment?.value).toLocaleString()}</span>
+                <span className="text-slate-900">{formatCurrency(shipment?.value || 0, shipment?.currency || originCurrency.code)}</span>
               </div>
               <div className="flex justify-between py-2">
                 <span className="text-slate-600 text-sm">Pre-Clear Token</span>
@@ -100,81 +185,50 @@ export function PaymentPage({ shipment, onNavigate }) {
 
           {/* Cost Breakdown */}
           <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-            <h3 className="text-slate-900 mb-4">Itemized Cost Breakdown</h3>
-            
-            <div className="space-y-3 mb-6">
-              <div className="flex items-center justify-between py-3 border-b border-slate-100">
-                <div className="flex items-center gap-3">
-                  <Truck className="w-5 h-5 text-blue-600" />
-                  <div>
-                    <p className="text-slate-900 text-sm">Shipping Cost</p>
-                    <p className="text-slate-500 text-xs">{weight} kg × $5/kg</p>
-                  </div>
-                </div>
-                <span className="text-slate-900">${baseShippingCost.toFixed(2)}</span>
+            <h3 className="text-slate-900 mb-4">Cost Summary</h3>
+
+            <div className="space-y-3 mb-6 text-sm">
+              <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                <span className="text-slate-600">Customs Value:</span>
+                <span className="text-slate-900">{formatCurrency(shipmentValue, shipment?.currency || originCurrency.code)}</span>
               </div>
 
-              <div className="flex items-center justify-between py-3 border-b border-slate-100">
-                <div className="flex items-center gap-3">
-                  <DollarSign className="w-5 h-5 text-amber-600" />
-                  <div>
-                    <p className="text-slate-900 text-sm">Customs Duty</p>
-                    <p className="text-slate-500 text-xs">5% of declared value</p>
-                  </div>
-                </div>
-                <span className="text-slate-900">${customsDuty.toFixed(2)}</span>
+              <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                <span className="text-slate-600">Base Price:</span>
+                <span className="text-slate-900">{formatCurrency(basePrice, shipment?.currency || originCurrency.code)}</span>
               </div>
 
-              <div className="flex items-center justify-between py-3 border-b border-slate-100">
-                <div className="flex items-center gap-3">
-                  <FileText className="w-5 h-5 text-purple-600" />
-                  <div>
-                    <p className="text-slate-900 text-sm">Import Tax</p>
-                    <p className="text-slate-500 text-xs">8% of declared value</p>
-                  </div>
-                </div>
-                <span className="text-slate-900">${importTax.toFixed(2)}</span>
+              <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                <span className="text-slate-600">Service Charge:</span>
+                <span className="text-slate-900">{formatCurrency(serviceCharge, shipment?.currency || originCurrency.code)}</span>
               </div>
 
-              <div className="flex items-center justify-between py-3 border-b border-slate-100">
-                <div className="flex items-center gap-3">
-                  <Shield className="w-5 h-5 text-green-600" />
-                  <div>
-                    <p className="text-slate-900 text-sm">Pre-Clear Processing Fee</p>
-                    <p className="text-slate-500 text-xs">AI + Broker validation</p>
-                  </div>
-                </div>
-                <span className="text-slate-900">${preClearFee.toFixed(2)}</span>
+              <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                <span className="text-slate-600">Estimated Clearance:</span>
+                <span className="text-slate-900">{formatCurrency(customsClearance, shipment?.currency || originCurrency.code)}</span>
               </div>
 
-              <div className="flex items-center justify-between py-3 border-b border-slate-100">
-                <div className="flex items-center gap-3">
-                  <Package className="w-5 h-5 text-slate-600" />
-                  <div>
-                    <p className="text-slate-900 text-sm">Service Charge</p>
-                    <p className="text-slate-500 text-xs">Handling & documentation</p>
-                  </div>
+              {shipment?.pickupType === 'Scheduled Pickup' && (
+                <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                  <span className="text-slate-600">Pickup Charge:</span>
+                  <span className="text-slate-900">{formatCurrency(pickupCharge, shipment?.currency || originCurrency.code)}</span>
                 </div>
-                <span className="text-slate-900">${serviceCharge.toFixed(2)}</span>
-              </div>
-            </div>
+              )}
 
-            {/* Currency Conversion */}
-            <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg p-4 mb-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-slate-700 text-sm mb-1">Total Amount (Origin Currency)</p>
-                  <p className="text-slate-900 text-2xl">{originCurrency.symbol}{total.toFixed(2)} {originCurrency.code}</p>
-                  <p className="text-slate-600 text-xs mt-1">Based on origin: {shipment?.originCountry}</p>
-                </div>
-                <TrendingUp className="w-6 h-6 text-blue-600" />
+              <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                <span className="text-slate-600">Subtotal:</span>
+                <span className="text-slate-900">{formatCurrency(subtotal, shipment?.currency || originCurrency.code)}</span>
               </div>
-            </div>
 
-            {/* Total */}
-            <div className="flex items-center justify-between pt-4 border-t-2 border-slate-300">
-              <span className="text-slate-900 text-lg">Total Payable</span>
-              <span className="text-slate-900 text-2xl">{originCurrency.symbol}{total.toFixed(2)}</span>
+              <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                <span className="text-slate-600">Tax (18%):</span>
+                <span className="text-slate-900">{formatCurrency(tax, shipment?.currency || originCurrency.code)}</span>
+              </div>
+
+              <div className="flex items-center justify-between pt-3 border-t-2 border-slate-200 text-base font-semibold">
+                <span className="text-slate-900">Total:</span>
+                <span className="text-blue-600">{formatCurrency(total, shipment?.currency || originCurrency.code)}</span>
+              </div>
             </div>
           </div>
         </div>

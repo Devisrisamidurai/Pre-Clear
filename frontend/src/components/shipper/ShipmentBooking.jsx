@@ -1,6 +1,7 @@
 import { ArrowRight, Package, CheckCircle, Calendar, MapPin, Box } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { shipmentsStore } from '../../store/shipmentsStore';
+import { getCurrencyByCountry, formatCurrency } from '../../utils/validation';
 
 export function ShipmentBooking({ onNavigate }) {
   const [shipments, setShipments] = useState([]);
@@ -92,18 +93,35 @@ export function ShipmentBooking({ onNavigate }) {
                           <CheckCircle className="w-3 h-3" />
                           Broker Approved
                         </span>
-                      </div>
-                      <div className="text-slate-600 text-sm">
-                        <p className="mb-1">
-                          <strong>Route:</strong> {shipment.originCity}, {shipment.originCountry} → {shipment.destCity}, {shipment.destCountry}
-                        </p>
-                        <p className="mb-1">
-                          <strong>Weight:</strong> {shipment.weight} kg
-                        </p>
-                        <p>
-                          <strong>Value:</strong> ${parseFloat(shipment.value).toLocaleString()}
-                        </p>
-                      </div>
+                      </div>                        <div className="text-slate-600 text-sm">
+                          <p className="mb-1">
+                            <strong>Route:</strong> {shipment.shipper?.city || 'N/A'}, {shipment.shipper?.country || 'N/A'} → {shipment.consignee?.city || 'N/A'}, {shipment.consignee?.country || 'N/A'}
+                          </p>
+                          <p className="mb-1">
+                            <strong>Weight:</strong> {shipment.weight || 'N/A'} kg
+                          </p>
+                                  <p className="mb-1">
+                                    <strong>Value:</strong> {formatCurrency(shipment.value || 0, shipment.currency || (getCurrencyByCountry(shipment.shipper?.country || 'US') || {}).code)}
+                                  </p>
+                          <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                            <div>
+                              <p className="text-slate-500 text-xs">Shipper</p>
+                              <p className="text-slate-900">{shipment.shipper?.company || shipment.shipperName || 'N/A'}</p>
+                              <p className="text-slate-500 text-xs">{shipment.shipper?.contactName || ''} {shipment.shipper?.email ? `• ${shipment.shipper.email}` : ''}</p>
+                            </div>
+                            <div>
+                              <p className="text-slate-500 text-xs">Consignee</p>
+                              <p className="text-slate-900">{shipment.consignee?.company || 'N/A'}</p>
+                              <p className="text-slate-500 text-xs">{shipment.consignee?.contactName || ''} {shipment.consignee?.email ? `• ${shipment.consignee.email}` : ''}</p>
+                            </div>
+                          </div>
+                          {shipment.packages && shipment.packages.length > 0 && (
+                            <div className="mt-3 text-sm">
+                              <p className="text-slate-500 text-xs">Packages</p>
+                              <p className="text-slate-900">{shipment.packages.length} package(s) — Total items: {shipment.packages.reduce((acc, p) => acc + (p.products ? p.products.reduce((a, pr) => a + (pr.qty||0), 0) : 0), 0) || 'N/A'}</p>
+                            </div>
+                          )}
+                        </div>
                     </div>
                   </div>
                 </div>

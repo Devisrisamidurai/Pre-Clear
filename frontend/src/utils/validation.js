@@ -144,6 +144,16 @@ export function getTimezoneByCountry(countryCode) {
   return timezoneMap[countryCode] || 'UTC';
 }
 
+// Format currency using Intl, with a safe fallback
+export function formatCurrency(amount, currency = 'USD') {
+  const num = parseFloat(amount) || 0;
+  try {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(num);
+  } catch (e) {
+    return `${num.toLocaleString()} ${currency}`;
+  }
+}
+
 // HS Code suggestions based on product name/description
 export async function suggestHSCode(productName, productDescription) {
   // Simulate API delay

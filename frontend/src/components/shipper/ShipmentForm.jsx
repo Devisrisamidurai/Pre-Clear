@@ -28,6 +28,15 @@ const reasonsForExport = [
   'Other'
 ];
 
+// Helper to get today's date in YYYY-MM-DD format
+const getTodayDateString = () => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 // Customs clearance configuration by country/region
 const CLEARANCE_CONFIG = {
   'IN': { base: 50, threshold: 10000, formalFee: 2000, extraLineItemFee: 100, specialCommodityFee: 1500 },
@@ -699,7 +708,7 @@ export function ShipmentForm({ shipment, onNavigate }) {
       products: pkg.products || []
     }));
     
-    // Calculate customs value from packages
+    // Calculate customs value from packages (sum of product totalValue)
     let calculatedCustomsValue = 0;
     updatedShipment.packages.forEach(pkg => {
       if (pkg.products && Array.isArray(pkg.products)) {
@@ -709,6 +718,38 @@ export function ShipmentForm({ shipment, onNavigate }) {
       }
     });
     updatedShipment.customsValue = calculatedCustomsValue;
+
+    // Calculate total shipment weight (sum of package weight * quantity if provided)
+    const totalWeight = updatedShipment.packages.reduce((acc, pkg) => {
+      const pkgQty = pkg.quantity || 1;
+      const pkgWeight = parseFloat(pkg.weight || 0);
+      return acc + (pkgWeight * pkgQty);
+    }, 0);
+    updatedShipment.weight = totalWeight || updatedShipment.weight || 0;
+
+    // Set declared value from calculated customs value if not explicitly provided
+    updatedShipment.value = (updatedShipment.value && updatedShipment.value !== '') ? updatedShipment.value : String(calculatedCustomsValue || 0);
+
+    // Ensure currency is set
+    updatedShipment.currency = updatedShipment.currency || profileCurrency || 'USD';
+
+    // Ensure shipmentType and mode have defaults if missing
+    updatedShipment.shipmentType = updatedShipment.shipmentType || 'International';
+    updatedShipment.mode = updatedShipment.mode || 'Air';
+
+    // Save uploaded documents from form to uploadedDocuments
+    if (Object.keys(documentFiles).length > 0) {
+      updatedShipment.uploadedDocuments = updatedShipment.uploadedDocuments || {};
+      Object.entries(documentFiles).forEach(([docName, file]) => {
+        updatedShipment.uploadedDocuments[docName.toLowerCase().replace(/\s+/g, '_')] = {
+          name: docName,
+          fileName: file.name,
+          uploaded: true,
+          uploadedAt: new Date().toISOString(),
+          source: 'form'
+        };
+      });
+    }
 
     // Save to store and navigate to details for AI evaluation
     try {
@@ -815,6 +856,7 @@ export function ShipmentForm({ shipment, onNavigate }) {
                   name="estimatedDropoffDate"
                   value={formData.estimatedDropoffDate || ''}
                   onChange={handleChange}
+                  min={getTodayDateString()}
                 />
               )}
               {formData.pickupType === 'Scheduled Pickup' && (
@@ -832,6 +874,7 @@ export function ShipmentForm({ shipment, onNavigate }) {
                     name="pickupDate"
                     value={formData.pickupDate || ''}
                     onChange={handleChange}
+                    min={getTodayDateString()}
                   />
                   <InputField
                     label="Earliest Pickup Time"

@@ -13,6 +13,7 @@ export function ShipmentChatPanel({ shipmentId, isOpen, onClose, userRole, userN
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const [chatViewingFile, setChatViewingFile] = useState(null);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -30,6 +31,47 @@ export function ShipmentChatPanel({ shipmentId, isOpen, onClose, userRole, userN
 
   const loadMessages = () => {
     setMessages(shipmentsStore.getMessages(shipmentId));
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    setIsUploading(true);
+
+    // Simulate upload
+    setTimeout(() => {
+      const msg = {
+        id: `msg-${Date.now()}`,
+        shipmentId,
+        sender: userRole,
+        senderName: userName,
+        message: '',
+        fileName: file.name,
+        fileType: file.type,
+        timestamp: new Date().toISOString(),
+        type: 'file'
+      };
+
+      // Add chat message
+      shipmentsStore.addMessage(msg);
+
+      // Also persist uploaded document metadata on the shipment (for details view)
+      const shipment = shipmentsStore.getShipmentById(shipmentId) || {};
+      shipment.uploadedDocuments = shipment.uploadedDocuments || {};
+      // Use filename as key (demo). In real app use stable id or storage key.
+      const key = file.name.replace(/\s+/g, '_');
+      shipment.uploadedDocuments[key] = {
+        uploaded: true,
+        name: file.name,
+        uploadedAt: new Date().toISOString(),
+        fileType: file.type
+      };
+      shipmentsStore.saveShipment(shipment);
+
+      setIsUploading(false);
+      // clear input
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }, 900);
   };
 
   const handleSendMessage = () => {
@@ -91,7 +133,19 @@ export function ShipmentChatPanel({ shipmentId, isOpen, onClose, userRole, userN
                   }}
                 >
                   <p className="text-xs opacity-70 mb-1">{msg.senderName}</p>
-                  <p className="text-sm">{msg.message}</p>
+                  {msg.type === 'file' ? (
+                    <div>
+                      <button
+                        onClick={() => setChatViewingFile(msg)}
+                        className="text-sm text-blue-600 hover:underline"
+                      >
+                        {msg.fileName}
+                      </button>
+                      <p className="text-xs text-slate-400 mt-1">File uploaded</p>
+                    </div>
+                  ) : (
+                    <p className="text-sm">{msg.message}</p>
+                  )}
                 </div>
                 <p className="text-xs mt-1 text-right" style={{ color: COLORS.coffeeLight }}>
                   {new Date(msg.timestamp).toLocaleTimeString()}
@@ -110,6 +164,7 @@ export function ShipmentChatPanel({ shipmentId, isOpen, onClose, userRole, userN
             type="file"
             ref={fileInputRef}
             className="hidden"
+            onChange={handleFileChange}
           />
 
           <button
@@ -139,6 +194,21 @@ export function ShipmentChatPanel({ shipmentId, isOpen, onClose, userRole, userN
           </button>
         </div>
       </div>
+      {/* Chat file viewer modal */}
+      {chatViewingFile && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-lg w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-slate-900">{chatViewingFile.fileName}</h3>
+              <button onClick={() => setChatViewingFile(null)} className="text-slate-500">Close</button>
+            </div>
+            <p className="text-slate-600 text-sm mb-4">Preview not available in demo. You can download the file below.</p>
+            <div className="flex justify-end">
+              <a href="#" onClick={(e) => { e.preventDefault(); alert(`Downloading ${chatViewingFile.fileName} for shipment ${chatViewingFile.shipmentId || shipmentId}`); }} className="px-4 py-2 rounded-lg" style={{ background: '#2563EB', color: '#ffffff', border: '2px solid #1E40AF' }}>Download</a>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

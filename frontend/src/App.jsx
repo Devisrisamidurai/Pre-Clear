@@ -21,6 +21,8 @@ import { ShipmentBooking } from "./components/shipper/ShipmentBooking";
 import { PaymentPage } from "./components/shipper/PaymentPage";
 import { PaymentList } from "./components/shipper/PaymentList";
 import { ShipperProfile } from "./components/shipper/ShipperProfile";
+import { BookedPaidShipments } from "./components/shipper/BookedPaidShipments";
+import { BookedShipmentDetails } from "./components/shipper/BookedShipmentDetails";
 
 // Broker Pages
 import { BrokerDashboard } from "./components/broker/BrokerDashboard";
@@ -40,7 +42,6 @@ import { SystemConfig } from "./components/admin/SystemConfig";
 import { AIRulesMonitoring } from "./components/admin/AIRulesMonitoring";
 import { ApprovalLogs } from "./components/admin/ApprovalLogs";
 import { ShipmentTracking } from "./components/admin/ShipmentTracking";
-import { ImportExportRules } from "./components/admin/ImportExportRules";
 
 function AppContent() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -75,7 +76,7 @@ function AppContent() {
       case "create-shipment":
         return (
           <ShipmentForm
-            shipment={currentShipment || createDefaultShipment()}
+            shipment={createDefaultShipment()}
             onNavigate={handleNavigate}
           />
         );
@@ -145,6 +146,15 @@ function AppContent() {
         );
       case "payment-list":
         return <PaymentList onNavigate={handleNavigate} />;
+      case "booked-paid":
+        return <BookedPaidShipments onNavigate={handleNavigate} />;
+      case "booked-shipment-details":
+        return (
+          <BookedShipmentDetails
+            shipment={currentShipment}
+            onNavigate={handleNavigate}
+          />
+        );
       case "profile":
         return <ShipperProfile />;
       default:
@@ -212,8 +222,6 @@ function AppContent() {
         return <ApprovalLogs />;
       case "tracking":
         return <ShipmentTracking />;
-      case "import-export-rules":
-        return <ImportExportRules />;
       default:
         return <AdminDashboard onNavigate={handleNavigate} />;
     }

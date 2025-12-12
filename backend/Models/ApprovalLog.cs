@@ -3,7 +3,6 @@ using System.Text.Json;
 namespace PreClear.Api.Models
 {
     public enum ApprovalAction { approve, reject, request_changes, escalate }
-
     public class ApprovalLog
     {
         public long Id { get; set; }

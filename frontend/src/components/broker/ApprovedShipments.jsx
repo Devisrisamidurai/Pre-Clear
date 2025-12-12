@@ -1,10 +1,28 @@
 import { useState } from 'react';
 import { CheckCircle, FileText, Eye } from 'lucide-react';
 import { useShipments } from '../../hooks/useShipments';
+import { MapPin, DollarSign, Zap, XCircle, Package, Calendar, ArrowLeft, MessageCircle, Upload } from 'lucide-react';
+import { getCurrencyByCountry, formatCurrency } from '../../utils/validation';
+
+// Helper function to format time to 12-hour format with AM/PM
+const formatTimeWithAmPm = (timeString) => {
+  if (!timeString) return 'N/A';
+  const [hours, minutes] = timeString.split(':');
+  const hour = parseInt(hours);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const displayHour = hour % 12 || 12;
+  return `${displayHour}:${minutes} ${ampm}`;
+};
 
 export function ApprovedShipments({ onNavigate }) {
   const { shipments } = useShipments();
   const approved = shipments.filter(s => s.brokerApproval === 'approved');
+  const [expandedShipmentId, setExpandedShipmentId] = useState(null);
+  const [viewingDocument, setViewingDocument] = useState(null);
+
+  const getCurrency = (originCountry) => {
+    return getCurrencyByCountry(originCountry || 'US');
+  };
 
   return (
     <div style={{ background: '#FBF9F6', minHeight: '100vh', padding: 24 }}>
@@ -52,18 +70,22 @@ export function ApprovedShipments({ onNavigate }) {
                     <p className="text-slate-500 text-sm mb-1">Product</p>
                     <p className="text-slate-900">{s.productName}</p>
                   </div>
-                  <div>
-                    <p className="text-slate-500 text-sm mb-1">Route</p>
-                    <p className="text-slate-900">{s.originCountry} → {s.destCountry}</p>
-                  </div>
-                  <div>
-                    <p className="text-slate-500 text-sm mb-1">Value</p>
-                    <p className="text-slate-900">{s.value}</p>
-                  </div>
-                  <div>
-                    <p className="text-slate-500 text-sm mb-1">HS Code</p>
-                    <p className="text-slate-900">{s.hsCode}</p>
-                  </div>
+                    <div>
+                      <p className="text-slate-500 text-sm mb-1">Route</p>
+                      <p className="text-slate-900">{s.shipper?.city || s.originCountry || 'N/A'}, {s.shipper?.country || ''} → {s.consignee?.city || s.destCountry || 'N/A'}, {s.consignee?.country || ''}</p>
+                    </div>
+                   <div>
+                     <p className="text-slate-500 text-sm mb-1">Quantity</p>
+                     <p className="text-slate-900">{s.quantity} units</p>
+                   </div>
+                   <div>
+                     <p className="text-slate-500 text-sm mb-1">Weight</p>
+                     <p className="text-slate-900">{s.weight} kg</p>
+                   </div>
+                   <div>
+                     <p className="text-slate-500 text-sm mb-1">Product Value</p>
+                     <p className="text-slate-900">{formatCurrency(parseFloat(s.value || 0), s.currency || currency.code)}</p>
+                   </div>
                 </div>
               </div>
 

@@ -49,6 +49,10 @@ coverage/
 backend/bin/
 backend/obj/
 =======
+.dll
+.exe
+.json
+.pdb
 
 /backend/obj/
 >>>>>>> 0439e845ff88249abc3f2b19bdf2f172ebafe499

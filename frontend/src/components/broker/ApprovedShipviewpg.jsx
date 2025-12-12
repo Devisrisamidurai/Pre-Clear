@@ -11,12 +11,25 @@ import {
   Upload,
   Shield,
   TrendingUp,
-  Eye
+  Eye,
+  MapPin,
+  Phone,
+  Mail
 } from 'lucide-react';
 import { useShipments } from '../../hooks/useShipments';
-import { getCurrencyByCountry } from '../../utils/validation';
+import { getCurrencyByCountry, formatCurrency } from '../../utils/validation';
 import { ShipmentChatPanel } from '../ShipmentChatPanel';
 import { shipmentsStore } from '../../store/shipmentsStore';
+
+// Helper function to format time to 12-hour format with AM/PM
+const formatTimeWithAmPm = (timeString) => {
+  if (!timeString) return 'N/A';
+  const [hours, minutes] = timeString.split(':');
+  const hour = parseInt(hours);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const displayHour = hour % 12 || 12;
+  return `${displayHour}:${minutes} ${ampm}`;
+};
 
 export function ApprovedShipviewpg({ shipment: initialShipment = {}, onNavigate }) {
   const [currentShipment, setCurrentShipment] = useState(initialShipment || {});
@@ -31,7 +44,17 @@ export function ApprovedShipviewpg({ shipment: initialShipment = {}, onNavigate 
     const [viewingDocument, setViewingDocument] = useState(null);
     const [showAllDocs, setShowAllDocs] = useState(false);
 
-    const currency = getCurrencyByCountry(currentShipment?.originCountry || 'US');
+    const currencyCode = currentShipment?.currency || 'USD';
+    const currencySymbol = { 
+      USD: '$', 
+      EUR: '€', 
+      GBP: '£', 
+      JPY: '¥', 
+      CAD: 'C$', 
+      INR: '₹',
+      CNY: '¥',
+      AUD: 'A$'
+    }[currencyCode] || currencyCode;
 
     useEffect(() => {
       const shipmentId = initialShipment?.id ?? currentShipment?.id;
@@ -141,61 +164,190 @@ export function ApprovedShipviewpg({ shipment: initialShipment = {}, onNavigate 
           <h1 className="text-slate-900 mb-1">Review Shipment #{currentShipment.id}</h1>
           <p className="text-slate-600">Detailed compliance review and approval</p>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 items-stretch">
-          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm h-full">
-            <div className="text-left h-full">
-              <h3 className="text-sm font-medium text-slate-900 mb-2">Shipper Details</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <p className="text-xs text-slate-500 mb-1">Shipper Name</p>
-                  <p className="text-slate-900">{currentShipment.shipperName}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-slate-500 mb-1">Shipper ID</p>
-                  <p className="text-slate-900">{currentShipment.shipperId}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-slate-500 mb-1">Origin Country</p>
-                  <p className="text-slate-900">{currentShipment.originCountry}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-slate-500 mb-1">Origin City</p>
-                  <p className="text-slate-900">{currentShipment.originCity}</p>
-                </div>
-                <div className="sm:col-span-2">
-                  <p className="text-xs text-slate-500 mb-1">Origin Address</p>
-                  <p className="text-slate-900 text-sm">{currentShipment.originAddress}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
-            <div className="bg-white rounded-xl p-6 border border-slate-200">
-              <h2 className="text-slate-900 mb-4">Product Details</h2>
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div className="col-span-2">
-                  <p className="text-xs text-slate-500 mb-1">Product Name</p>
-                  <p className="text-slate-900">{currentShipment.productName}</p>
+            {/* Comprehensive Shipment Details */}
+            <div className="bg-white rounded-xl border border-slate-200 p-6">
+              <h2 className="text-slate-900 mb-6">Shipment Details</h2>
+              
+              {/* Basics Section */}
+              <div className="mb-8 pb-6 border-b border-slate-200">
+                <h3 className="text-slate-900 font-semibold mb-4">Shipment Basics</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-slate-500 text-sm mb-1">Title</p>
+                    <p className="text-slate-900">{currentShipment.title || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500 text-sm mb-1">Mode</p>
+                    <p className="text-slate-900">{currentShipment.mode || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500 text-sm mb-1">Shipment Type</p>
+                    <p className="text-slate-900">{currentShipment.shipmentType || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500 text-sm mb-1">Service Level</p>
+                    <p className="text-slate-900">{currentShipment.serviceLevel || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500 text-sm mb-1">Currency</p>
+                    <p className="text-slate-900">{currentShipment.currency || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500 text-sm mb-1">Pickup Type</p>
+                    <p className="text-slate-900">{currentShipment.pickupType || 'N/A'}</p>
+                    {currentShipment.pickupType === 'Drop-off' && currentShipment.estimatedDropoffDate && (
+                      <p className="text-xs text-slate-500 mt-1">Estimated Drop-off: {new Date(currentShipment.estimatedDropoffDate).toLocaleDateString()}</p>
+                    )}
+                    {currentShipment.pickupType === 'Scheduled Pickup' && (
+                      <div className="text-xs text-slate-500 mt-1">
+                        {currentShipment.pickupLocation && <div>Location: {currentShipment.pickupLocation}</div>}
+                        {currentShipment.pickupDate && <div>Date: {new Date(currentShipment.pickupDate).toLocaleDateString()}</div>}
+                        {(currentShipment.pickupTimeEarliest || currentShipment.pickupTimeLatest) && (
+                          <div>Time: {formatTimeWithAmPm(currentShipment.pickupTimeEarliest)} — {formatTimeWithAmPm(currentShipment.pickupTimeLatest)}</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs text-slate-500 mb-1">HS Code</p>
-                  <p className="text-slate-900">{currentShipment.hsCode}</p>
+              </div>
+
+              {/* Shipper Section */}
+              <div className="mb-8 pb-6 border-b border-slate-200">
+                <h3 className="text-slate-900 font-semibold mb-4">Shipper Information</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-slate-500 text-sm mb-1">Company</p>
+                    <p className="text-slate-900">{currentShipment.shipper?.company || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500 text-sm mb-1">Contact Name</p>
+                    <p className="text-slate-900">{currentShipment.shipper?.contactName || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500 text-sm mb-1">Phone</p>
+                    <p className="text-slate-900">{currentShipment.shipper?.phone || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500 text-sm mb-1">Email</p>
+                    <p className="text-slate-900">{currentShipment.shipper?.email || 'N/A'}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <p className="text-slate-500 text-sm mb-1">Address</p>
+                    <p className="text-slate-900">{currentShipment.shipper?.address1 || 'N/A'}</p>
+                    {currentShipment.shipper?.address2 && <p className="text-slate-900">{currentShipment.shipper.address2}</p>}
+                    <p className="text-slate-900">{currentShipment.shipper?.city || ''}, {currentShipment.shipper?.state || ''} {currentShipment.shipper?.postalCode || ''}</p>
+                    <p className="text-slate-900">{currentShipment.shipper?.country || ''}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs text-slate-500 mb-1">Quantity</p>
-                  <p className="text-slate-900">{currentShipment.quantity} units</p>
+              </div>
+
+              {/* Consignee Section */}
+              <div className="mb-8 pb-6 border-b border-slate-200">
+                <h3 className="text-slate-900 font-semibold mb-4">Consignee Information</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-slate-500 text-sm mb-1">Company</p>
+                    <p className="text-slate-900">{currentShipment.consignee?.company || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500 text-sm mb-1">Contact Name</p>
+                    <p className="text-slate-900">{currentShipment.consignee?.contactName || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500 text-sm mb-1">Phone</p>
+                    <p className="text-slate-900">{currentShipment.consignee?.phone || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500 text-sm mb-1">Email</p>
+                    <p className="text-slate-900">{currentShipment.consignee?.email || 'N/A'}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <p className="text-slate-500 text-sm mb-1">Address</p>
+                    <p className="text-slate-900">{currentShipment.consignee?.address1 || 'N/A'}</p>
+                    {currentShipment.consignee?.address2 && <p className="text-slate-900">{currentShipment.consignee.address2}</p>}
+                    <p className="text-slate-900">{currentShipment.consignee?.city || ''}, {currentShipment.consignee?.state || ''} {currentShipment.consignee?.postalCode || ''}</p>
+                    <p className="text-slate-900">{currentShipment.consignee?.country || ''}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs text-slate-500 mb-1">Weight</p>
-                  <p className="text-slate-900">{currentShipment.weight} kg</p>
+              </div>
+
+              {/* Packages and Products Section */}
+              <div className="mb-8 pb-6 border-b border-slate-200">
+                <h3 className="text-slate-900 font-semibold mb-4">Packages & Products</h3>
+                <div className="space-y-4">
+                  {(currentShipment.packages || []).map((pkg, pkgIdx) => (
+                    <div key={pkgIdx} className="p-4 bg-slate-50 rounded-lg">
+                      <p className="text-slate-900 font-medium mb-3">Package {pkgIdx + 1}</p>
+                      <div className="grid grid-cols-2 gap-4 mb-3">
+                        <div>
+                          <p className="text-slate-500 text-xs mb-1">Type</p>
+                          <p className="text-slate-900 text-sm">{pkg.type || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <p className="text-slate-500 text-xs mb-1">Dimensions</p>
+                          <p className="text-slate-900 text-sm">{pkg.length}x{pkg.width}x{pkg.height} {pkg.dimUnit || 'cm'}</p>
+                        </div>
+                        <div>
+                          <p className="text-slate-500 text-xs mb-1">Weight</p>
+                          <p className="text-slate-900 text-sm">{pkg.weight} {pkg.weightUnit || 'kg'}</p>
+                        </div>
+                        <div>
+                          <p className="text-slate-500 text-xs mb-1">Stackable</p>
+                          <p className="text-slate-900 text-sm">{pkg.stackable ? 'Yes' : 'No'}</p>
+                        </div>
+                      </div>
+                      {(pkg.products || []).length > 0 && (
+                        <div className="border-t border-slate-200 pt-3">
+                          <p className="text-slate-900 text-sm font-medium mb-2">Products in Package:</p>
+                          <div className="space-y-2">
+                            {pkg.products.map((prod, prodIdx) => (
+                              <div key={prodIdx} className="text-sm bg-white p-2 rounded border border-slate-200">
+                                <p className="text-slate-900 font-medium">{prod.name || 'N/A'}</p>
+                                <div className="grid grid-cols-2 gap-2 text-xs text-slate-600 mt-1">
+                                  <div>HS Code: {prod.hsCode || 'N/A'}</div>
+                                  <div>Qty: {prod.qty || 0} {prod.uom || ''}</div>
+                                  <div>Unit Price: {currencySymbol}{prod.unitPrice || 0}</div>
+                                  <div>Total: {currencySymbol}{prod.totalValue || 0}</div>
+                                  <div className="col-span-2">Origin: {prod.originCountry || 'N/A'}</div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
-                <div>
-                  <p className="text-xs text-slate-500 mb-1">Product Value</p>
-                  <p className="text-slate-900">{currency.symbol}{currentShipment.value} {currency.code}</p>
+              </div>
+
+              {/* Documents Section */}
+              <div>
+                <h3 className="text-slate-900 font-semibold mb-4">Documents</h3>
+                <div className="space-y-2">
+                  {(currentShipment.uploadedDocuments && Object.keys(currentShipment.uploadedDocuments).length > 0) ? (
+                    Object.entries(currentShipment.uploadedDocuments).map(([key, doc], idx) => (
+                      <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <CheckCircle className="w-5 h-5 text-green-600" />
+                          <div>
+                            <p className="text-sm text-slate-900">{doc.name || key}</p>
+                            {doc.uploadedAt && <p className="text-xs text-slate-500">Uploaded {new Date(doc.uploadedAt).toLocaleDateString()}</p>}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => setViewingDocument({ ...doc, shipmentId: currentShipment.id })}
+                          className="px-3 py-1 rounded-lg text-sm"
+                          style={{ background: '#2563EB', color: '#ffffff', border: '2px solid #1E40AF' }}
+                        >
+                          View
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-slate-500">No documents uploaded</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -221,46 +373,6 @@ export function ApprovedShipviewpg({ shipment: initialShipment = {}, onNavigate 
                 </div>
               </div>
             )}
-
-            <div className="bg-white rounded-xl p-6 border border-slate-200">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-slate-900">Document Status</h2>
-                <div>
-                  <button onClick={() => setShowAllDocs(true)} className="text-sm px-3 py-1 rounded-lg" style={{ background: '#F3F4F6', border: '1px solid #E5E7EB' }}>View All Documents</button>
-                </div>
-              </div>
-              <div className="space-y-2">
-                {(currentShipment.documents || []).length > 0 ? (
-                  (currentShipment.documents || []).map((doc, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        {doc.uploaded ? <CheckCircle className="w-5 h-5 text-green-600" /> : <XCircle className="w-5 h-5 text-red-600" />}
-                        <div>
-                          <p className="text-sm text-slate-900">{doc.name}</p>
-                          {doc.uploaded && doc.uploadedAt && <p className="text-xs text-slate-500">Uploaded {new Date(doc.uploadedAt).toLocaleDateString()}</p>}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        {doc.uploaded ? (
-                          <button
-                            onClick={() => setViewingDocument({ ...doc, shipmentId: currentShipment.id })}
-                            className="px-3 py-1 rounded-lg text-sm"
-                            style={{ background: '#2563EB', color: '#ffffff', border: '2px solid #1E40AF' }}
-                          >
-                            View
-                          </button>
-                        ) : (
-                          <span className={`px-2 py-1 text-xs rounded-full ${doc.uploaded ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{doc.uploaded ? 'Uploaded' : 'Missing'}</span>
-                        )}
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-sm text-slate-500">No documents uploaded yet</p>
-                )}
-              </div>
-            </div>
           </div>
 
           <div className="space-y-4">
@@ -270,11 +382,48 @@ export function ApprovedShipviewpg({ shipment: initialShipment = {}, onNavigate 
                 <div className="flex justify-between"><span className="text-slate-600">Shipment ID:</span><span className="text-slate-900">{currentShipment.id}</span></div>
                 <div className="flex justify-between"><span className="text-slate-600">Status:</span><span className="text-slate-900">{currentShipment.status}</span></div>
                 <div className="flex justify-between"><span className="text-slate-600">AI Approval:</span><span className={currentShipment.aiApproval === 'approved' ? 'text-green-600' : 'text-amber-600'}>{currentShipment.aiApproval}</span></div>
-                 <div className="flex justify-between"><span className="text-slate-600">Broker Approval:</span><span className={currentShipment.brokerReviewStatus === 'approved' ? 'text-green-600' : 'text-amber-600'}>{currentShipment.aiApproval}</span></div>
+                <div className="flex justify-between"><span className="text-slate-600">Broker Approval:</span><span className={currentShipment.brokerApproval === 'approved' ? 'text-green-600' : 'text-amber-600'}>{currentShipment.brokerApproval}</span></div>
+                <div className="flex justify-between"><span className="text-slate-600">Payment Status:</span><span className={currentShipment.paymentStatus === 'completed' ? 'text-green-600' : 'text-amber-600'}>{currentShipment.paymentStatus || 'N/A'}</span></div>
+                <div className="flex justify-between"><span className="text-slate-600">Total Paid:</span><span className="text-slate-900">{formatCurrency(parseFloat(currentShipment.pricing?.total || 0), currentShipment.currency || currency.code)}</span></div>
 
                 <div className="flex justify-between"><span className="text-slate-600">Created:</span><span className="text-slate-900">{currentShipment.createdAt ? new Date(currentShipment.createdAt).toLocaleDateString() : ''}</span></div>
               </div>
             </div>
+
+            {/* Pickup Information */}
+            {currentShipment?.pickupType && (
+              <div className="bg-purple-50 rounded-xl border border-purple-200 p-6">
+                <h4 className="text-purple-900 font-semibold mb-3">Pickup Information</h4>
+                <div className="space-y-2 text-sm">
+                  <div>
+                    <p className="text-purple-600">Pickup Type</p>
+                    <p className="text-purple-900">{currentShipment.pickupType || 'N/A'}</p>
+                  </div>
+                  {currentShipment.pickupType === 'Scheduled Pickup' && (
+                    <>
+                      <div>
+                        <p className="text-purple-600">Location</p>
+                        <p className="text-purple-900">{currentShipment.pickupLocation || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-purple-600">Pickup Date</p>
+                        <p className="text-purple-900">{currentShipment.pickupDate ? new Date(currentShipment.pickupDate).toLocaleDateString() : 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-purple-600">Time Window</p>
+                        <p className="text-purple-900">{formatTimeWithAmPm(currentShipment.pickupTimeEarliest)} — {formatTimeWithAmPm(currentShipment.pickupTimeLatest)}</p>
+                      </div>
+                    </>
+                  )}
+                  {currentShipment.pickupType === 'Drop-off' && (
+                    <div>
+                      <p className="text-purple-600">Estimated Drop-off Date</p>
+                      <p className="text-purple-900">{currentShipment.estimatedDropoffDate ? new Date(currentShipment.estimatedDropoffDate).toLocaleDateString() : 'N/A'}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
